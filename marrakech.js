@@ -10,110 +10,230 @@
  * marrakech.js
  *
  * Marrakech user interface script
- * 
+ *
  * In this file, you are describing the logic of your user interface, in Javascript language.
  *
  */
 
-define([
-    "dojo","dojo/_base/declare",
-    "ebg/core/gamegui",
-    "ebg/counter"
-],
-function (dojo, declare) {
-    return declare("bgagame.marrakech", ebg.core.gamegui, {
-        constructor: function(){
-            console.log('marrakech constructor');
-              
-            // Here, you can init the global variables of your user interface
-            // Example:
-            // this.myGlobalValue = 0;
-            
-            this.playersNumber = null;
-            
-            this.assamPosition = {
-              x: null,
-              y: null,
-              direction: null
-            };
-            
-            this.carpetPlaced = {
-              x1: null,
-              y1: null,
-              x2: null,
-              y2: null
-            };
-            
-            this.next_direction_connections = [];
+//# sourceURL=marrakech.js
+//@ sourceURL=marrakech.js
+var isDebug = true;
+var debug = isDebug ? console.info.bind(window.console) : function () { };
+define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], function (dojo, declare) {
+	return declare("bgagame.marrakech", ebg.core.gamegui, {
 
-        },
-        
-        /*
-            setup:
-            
-            This method must set up the game user interface according to current game situation specified
-            in parameters.
-            
-            The method is called each time the game interface is displayed to a player, ie:
-            _ when the game starts
-            _ when a player refreshes the game page (F5)
-            
-            "gamedatas" argument contains all datas retrieved by your "getAllDatas" PHP method.
-        */
-        
-        setup: function( gamedatas )
-        {
-            console.log( "Starting game setup" );
-            
-            // Save number of players
-            this.playersNumber = gamedatas.players_number;
-            
-            // Setting up player boards
-            for( var player_id in gamedatas.players )
-            {
-                var player = gamedatas.players[player_id];
+/*
+ * Constructor
+ */
+constructor: function () {
+  this.playersNumber = null;
 
-                this.addPlayerInfos( player_id, player );
-                
-                if ( player.player_eliminated == 1 )
-                {
-                  this.disablePlayerPanel( player_id );
-                }
-            }
-            
-            var assam = gamedatas.assam;
-            this.addAssamOnBoard(assam.x, assam.y, assam.direction);
-            this.assamPosition = {
-              x: assam.x,
-              y: assam.y,
-              direction: assam.direction
-            };
+  this._assam = {
+    x: null,
+    y: null,
+    dir: null
+  };
 
-            this.addTooltip( 'assam', _('Assam'), '' );
-            
+  this.carpetPlaced = {
+    x1: null,
+    y1: null,
+    x2: null,
+    y2: null
+  };
+
+  this.nextDirectionConnections = [];
+},
+
+
+/*
+ * Setup:
+ *	This method set up the game user interface according to current game situation specified in parameters
+ *	The method is called each time the game interface is displayed to a player, ie: when the game starts and when a player refreshes the game page (F5)
+ *
+ * Params :
+ *	- mixed gamedatas : contains all datas retrieved by the getAllDatas PHP method.
+ */
+setup: function (gamedatas) {
+	debug('SETUP', gamedatas);
+
+  // Setting up player boards
+  gamedatas.bplayers.forEach(player => this.addPlayerInfos(player));
+
+  // Setting up Assam
+  this.setAssam(gamedatas.assam);
+
+/*
+  TODO
             var carpets_on_board = gamedatas.carpets_on_board;
             this.addCarpetsOnBoard(carpets_on_board);
-            
+
             // Add events on square_action
             dojo.query(".square_action").connect("click", this, this.onClickCell);
- 
+
             // Setup game notifications to handle (see "setupNotifications" method below)
             this.setupNotifications();
 
-            console.log( "Ending game setup" );
         },
-       
+*/
+},
 
+
+/*
+ * addCarpetInfo : add a carpet info on a player's board
+ */
+addCarpetInfo: function(pId, carpet_type, carpet_count){
+  var div = dojo.place(this.format_block( 'jstpl_carpet_info', {
+    carpet_type: carpet_type,
+    carpet_count: carpet_count,
+  }) , 'player_board_' + pId);
+
+  this.addTooltip(div.id, _('Number of rugs left'), '' );
+},
+
+/*
+ * addPlayerInfos : add all infos about player in the player's board
+ */
+addPlayerInfos: function(player){
+  var pId = player.id;
+
+  // Add carpet count for the player
+  this.addCarpetInfo(pId, player.carpet_type, player['carpet_' + player.carpet_type]);
+
+  if(this.playersNumber == 2){ // If only two players => two carpet counts
+    var carpet_type_bis = parseInt(player.carpet_type) + 1;
+    this.addCarpetInfo(pId, carpet_type_bis, player['carpet_' + carpet_type_bis]);
+
+    if(player.next_carpet != 0){
+      dojo.addClass('carpet_info_' + player.next_carpet, 'nextCarpet');
+//      this.addTooltip( 'next_carpet_' + player_id, _('Next carpet to place'), '' );
+    }
+  }
+
+  // Add money count for the player
+  dojo.place( this.format_block( 'jstpl_money_info', {
+    id: pId,
+    money: player.money
+  }), 'player_board_' + pId);
+  this.addTooltip('money_player_' + pId, _('Number of dirhams'), '' );
+
+  // Disable player panel if eliminated
+  if(player.player_eliminated == 1)
+    this.disablePlayerPanel(pId);
+},
+
+
+/*
+ * setAssam at a particular spot (and create it first if it does not exists)
+ */
+setAssam: function(assam){
+  if(!$('assam')){
+    dojo.place( this.format_block( 'jstpl_assam', assam) , 'board');
+    this.addTooltip( 'assam', _('Assam'), '' );
+  }
+
+  this._assam = assam;
+  this.placeOnObject( 'assam', 'square_' + assam.x + '_' + assam.y);
+},
+
+
+
+
+
+
+/*
+ * onEnteringState:
+ * 	this method is called each time we are entering into a new game state.
+ * params:
+ *	- str stateName : name of the state we are entering
+ *	- mixed args : additional information
+ */
+onEnteringState: function (stateName, args) {
+	debug('Entering state: ' + stateName, args);
+
+	// Stop here if it's not the current player's turn for some states
+	if (["rotateAssam",].includes(stateName) && !this.isCurrentPlayerActive()) return;
+
+	// Call appropriate method
+	var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
+	if (this[methodName] !== undefined)
+		this[methodName](args.args);
+},
+
+/*
+ * onLeavingState:
+ * 	this method is called each time we are leaving a game state.
+ *
+ * params:
+ *	- str stateName : name of the state we are leaving
+ */
+onLeavingState: function (stateName) {
+	debug('Leaving state: ' + stateName);
+//	this.clearPossible(); TODO
+},
+
+
+
+
+
+
+/*
+ * takeAction: default AJAX call with locked interface
+ */
+takeAction: function (action, data, callback) {
+	data = data || {};
+	data.lock = true;
+	callback = callback || function (res) { };
+	this.ajaxcall("/marrakech/marrakech/" + action + ".html", data, this, callback);
+},
+
+
+////////////////////////////////
+////////////////////////////////
+///////		Rotate Assam		//////
+////////////////////////////////
+////////////////////////////////
+onEnteringStateRotateAssam: function() {
+  //  dojo.removeClass( "assam" ); ??
+
+  var directions = [
+    { n: 'N', x:0,  'y':-1},
+    { n: 'E', x:1,  'y':0},
+    { n: 'S', x:0,  'y':1},
+    { n: 'W', x:-1, 'y':0},
+  ];
+
+  for(var i = -1; i < 2; i++){
+    let dir = directions[(this._assam.dir + i + 4) % 4];
+    let elemId = 'next_direction_' + dir.n;
+    let x = this._assam.x + dir.x;
+    let y = this._assam.y + dir.y;
+    let delta = i;
+
+    dojo.style(elemId, 'display', 'block');
+    dojo.place(elemId, 'square_' + x + '_' + y );
+    this.nextDirectionConnections.push(
+      dojo.connect($(elemId), 'click', () => this.rotateAssam(delta) )
+    );
+  }
+},
+
+
+rotateAssam: function(delta){
+  this.takeAction('rotateAssam', {delta : delta});
+},
+
+
+/*
         ///////////////////////////////////////////////////
         //// Game & client states
-        
+
         // onEnteringState: this method is called each time we are entering into a new game state.
         //                  You can use this method to perform some user interface changes at this moment.
         //
         onEnteringState: function( stateName, args )
         {
             console.log( 'Entering state: '+stateName );
-            
+
             switch( stateName )
             {
               case 'assamDirection':
@@ -122,28 +242,14 @@ function (dojo, declare) {
                   this.setAssamDirections();
                 }
                 break;
-                
-              case 'placeCarpet':        
+
+              case 'placeCarpet':
                 if( this.isCurrentPlayerActive() )
                 {
                   this.setCarpetActions();
                 }
                 break;
-            
-            /* Example:
-            
-            case 'myGameState':
-            
-                // Show some HTML block at this game state
-                dojo.style( 'my_html_block_id', 'display', 'block' );
-                
-                break;
-           */
-           
-           
-            case 'dummmy':
-                break;
-            }
+
         },
 
         // onLeavingState: this method is called each time we are leaving a game state.
@@ -152,79 +258,72 @@ function (dojo, declare) {
         onLeavingState: function( stateName )
         {
             console.log( 'Leaving state: '+stateName );
-            
+
             switch( stateName )
             {
               case 'assamMove':
                 // Hide the die
                 dojo.style( 'dice', 'display', 'none' );
                 break;
-            
+
             /* Example:
-            
+
             case 'myGameState':
-            
+
                 // Hide the HTML block we are displaying only during this game state
                 dojo.style( 'my_html_block_id', 'display', 'none' );
-                
+
                 break;
-           */
-           
-           
+           *
+
+
             case 'dummmy':
                 break;
-            }               
-        }, 
-
+            }
+        },
+*/
         // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
         //                        action status bar (ie: the HTML links in the status bar).
-        //        
+        //
         onUpdateActionButtons: function( stateName, args )
         {
             console.log( 'onUpdateActionButtons: '+stateName );
-                      
+
             if( this.isCurrentPlayerActive() )
-            {            
+            {
                 switch( stateName )
                 {
                   /*case 'assamDirection':
-                    this.addActionButton( 'button_direction_right', _('Turn right'), 'onDirectionRight' ); 
-                    this.addActionButton( 'button_direction_left', _('Turn left'), 'onDirectionLeft' ); 
+                    this.addActionButton( 'button_direction_right', _('Turn right'), 'onDirectionRight' );
+                    this.addActionButton( 'button_direction_left', _('Turn left'), 'onDirectionLeft' );
                     this.addActionButton( 'button_skip_direction', _('Move forward'), 'onSkipDirection' );
                     break;*/
                   case 'placeCarpet':
                     this.addActionButton( 'button_validate', _('Validate'), 'onValidateCarpet' );
                     this.addActionButton( 'button_cancel', _('Cancel'), 'onCancelCarpet' );
                     break;
-/*               
+/*
                  Example:
- 
+
                  case 'myGameState':
-                    
+
                     // Add 3 action buttons in the action status bar:
-                    
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' ); 
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' ); 
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' ); 
+
+                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
+                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
+                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
                     break;
 */
                 }
             }
-        },        
+        },
 
         ///////////////////////////////////////////////////
         //// Utility methods
-        
-        addAssamOnBoard: function( x, y, direction )
-        {
-          dojo.place( this.format_block( 'jstpl_assam', {
-              direction: direction
-          } ) , 'board' );
-          this.placeOnObject( 'assam', 'square_' + x + '_' + y);
-        },
-        
+
+
         addCarpetsOnBoard: function( carpets_on_board )
-        {  
+        {
           for( var row in carpets_on_board )
           {
             var current_carpet = carpets_on_board[row];
@@ -238,145 +337,16 @@ function (dojo, declare) {
             });
           }
         },
-        
-        addPlayerInfos: function( player_id, player )
-        {
-          var player_board_div = $( 'player_board_' + player_id );
-          
-          // Add carpet count for the player
-          if ( this.playersNumber == 2 )
-          {
-            
-            dojo.place( this.format_block( 'jstpl_carpet_info', {
-              id: player_id,
-              carpet_type: player.carpet_type,
-              carpet_count: player['carpet_' + player.carpet_type]
-            } ) , player_board_div );
-            var carpet_type_bis = parseInt(player.carpet_type) + 1;
-            dojo.place( this.format_block( 'jstpl_carpet_info', {
-              id: player_id,
-              carpet_type: carpet_type_bis,
-              carpet_count: player['carpet_' + carpet_type_bis]
-            } ) , player_board_div );
-            if (player.next_carpet != 0)
-            {
-              var current_next_carpet = dojo.query( '#player_board_' + player_id + ' .carpet_info_' + player.next_carpet )[0];
-              
-              dojo.place( this.format_block( 'jstpl_next_carpet', {
-                id: player_id
-              } ) , current_next_carpet );
-              
-              this.addTooltip( 'next_carpet_' + player_id, _('Next carpet to place'), '' );
-            }
-          }
-          else
-          {
-            dojo.place( this.format_block( 'jstpl_carpet_info', {
-              id: player_id,
-              carpet_type: player.carpet_type,
-              carpet_count: player['carpet_' + player.carpet_type]
-            } ) , player_board_div );
-          }
-          
-          // Add money count for the player
-          dojo.place( this.format_block( 'jstpl_money_info', {
-            id: player_id,
-            money_count: player.money
-          } ) , player_board_div );
 
-          // Add tooltips
-          this.addTooltip( 'carpet_info_player_' + player_id, _('Number of rugs left'), '' );
-          this.addTooltip( 'money_player_' + player_id, _('Number of dirhams'), '' );
-        },
-        
-        setAssamDirections: function()
-        {
-          dojo.removeClass( "assam" );
-          
-          var x = parseInt(this.assamPosition.x)
-          var y = parseInt(this.assamPosition.y)
-          
-          switch( this.assamPosition.direction )
-          {
-            case 'S':
-              dojo.style( 'next_direction_S', 'display', 'block');
-              dojo.style( 'next_direction_E', 'display', 'block');
-              dojo.style( 'next_direction_W', 'display', 'block');
-              dojo.place( 'next_direction_S', 'square_' + x + '_' + (y+1) );
-              dojo.place( 'next_direction_E', 'square_' + (x+1) + '_' + y );
-              dojo.place( 'next_direction_W', 'square_' + (x-1) + '_' + y );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_S'), 'onclick', this, 'onSkipDirection' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_E'), 'onclick', this, 'onDirectionLeft' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_W'), 'onclick', this, 'onDirectionRight' )
-              );
-              break;
-            case 'E':
-              dojo.style( 'next_direction_E', 'display', 'block');
-              dojo.style( 'next_direction_N', 'display', 'block');
-              dojo.style( 'next_direction_S', 'display', 'block');
-              dojo.place( 'next_direction_E', 'square_' + (x+1) + '_' + y );
-              dojo.place( 'next_direction_N', 'square_' + x + '_' + (y-1) );
-              dojo.place( 'next_direction_S', 'square_' + x + '_' + (y+1) );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_E'), 'onclick', this, 'onSkipDirection' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_N'), 'onclick', this, 'onDirectionLeft' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_S'), 'onclick', this, 'onDirectionRight' )
-              );
-              break;
-            case 'N':
-              dojo.style( 'next_direction_N', 'display', 'block');
-              dojo.style( 'next_direction_W', 'display', 'block');
-              dojo.style( 'next_direction_E', 'display', 'block');
-              dojo.place( 'next_direction_N', 'square_' + x + '_' + (y-1) );
-              dojo.place( 'next_direction_W', 'square_' + (x-1) + '_' + y );
-              dojo.place( 'next_direction_E', 'square_' + (x+1) + '_' + y );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_N'), 'onclick', this, 'onSkipDirection' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_W'), 'onclick', this, 'onDirectionLeft' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_E'), 'onclick', this, 'onDirectionRight' )
-              );
-              break;
-            case 'W':
-              dojo.style( 'next_direction_W', 'display', 'block');
-              dojo.style( 'next_direction_S', 'display', 'block');
-              dojo.style( 'next_direction_N', 'display', 'block');
-              dojo.place( 'next_direction_W', 'square_' + (x-1) + '_' + y );
-              dojo.place( 'next_direction_S', 'square_' + x + '_' + (y+1) );
-              dojo.place( 'next_direction_N', 'square_' + x + '_' + (y-1) );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_W'), 'onclick', this, 'onSkipDirection' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_S'), 'onclick', this, 'onDirectionLeft' )
-              );
-              this.next_direction_connections.push(
-                dojo.connect( dojo.byId('next_direction_N'), 'onclick', this, 'onDirectionRight' )
-              );
-              break;
-          }
-          
-        },
-        
+
+
         removeAssamDirections: function() {
           dojo.query(".next_direction").style({
             display: 'none'
           });
           dojo.forEach( this.next_direction_connections, dojo.disconnect);
         },
-        
+
         setCarpetActions: function()
         {
           // Initialize carpet actions
@@ -386,13 +356,13 @@ function (dojo, declare) {
             x2: null,
             y2: null
           };
-          
+
           dojo.query(".square_action").removeClass('selected');
           dojo.query(".square_action").style({
             display: 'none',
             backgroundColor: 'transparent'
           });
-          
+
           if ( this.assamPosition.x > 1 )
           {
             dojo.query('#square_action_' + (parseInt(this.assamPosition.x)-1) + '_' + parseInt(this.assamPosition.y) ).style({
@@ -426,79 +396,28 @@ function (dojo, declare) {
 
         ///////////////////////////////////////////////////
         //// Player's action
-        
-        onDirectionRight: function ( evt )
-        {
-          dojo.stopEvent( evt );
-          
-          if( ! this.checkAction( 'directionRight' ) )
-          { return; }
-          
-          this.ajaxcall( "/marrakech/marrakech/directionRight.html",
-            { lock: true },
-            this,
-            function( result ) {
-              this.removeAssamDirections()
-            },
-            function( is_error) { }
-          );
-        },
-        
-        onDirectionLeft: function ( evt )
-        {
-          dojo.stopEvent( evt );
-          
-          if( ! this.checkAction( 'directionLeft' ) )
-          { return; }
-          
-          this.ajaxcall( "/marrakech/marrakech/directionLeft.html",
-            { lock: true },
-            this,
-            function( result ) {
-              this.removeAssamDirections()
-            },
-            function( is_error) { }
-          );
-        },
-        
-        onSkipDirection: function ( evt )
-        {
-          dojo.stopEvent( evt );
-          
-          if( ! this.checkAction( 'skipDirection' ) )
-          { return; }
-          
-          this.ajaxcall( "/marrakech/marrakech/skipDirection.html",
-            { lock: true },
-            this,
-            function( result ) {
-              this.removeAssamDirections()
-            },
-            function( is_error) { }
-          );
-        },
-        
+
         onValidateCarpet: function ( evt )
         {
           dojo.stopEvent( evt );
-          
+
           if( ! this.checkAction( 'placeCarpet' ) )
           { return; }
-          
-          if ( this.carpetPlaced.x1 == null 
-            || this.carpetPlaced.y1 == null 
-            || this.carpetPlaced.x2 == null 
+
+          if ( this.carpetPlaced.x1 == null
+            || this.carpetPlaced.y1 == null
+            || this.carpetPlaced.x2 == null
             || this.carpetPlaced.y2 == null)
           {
             this.showMessage( _('Please select 2 cells to place your carpet'), 'error' );
             return;
           }
-          
+
           var x1 = this.carpetPlaced.x1;
           var y1 = this.carpetPlaced.y1;
           var x2 = this.carpetPlaced.x2;
           var y2 = this.carpetPlaced.y2;
-          
+
           this.ajaxcall( "/marrakech/marrakech/placeCarpet.html",
             {
               x1: x1,
@@ -523,35 +442,35 @@ function (dojo, declare) {
             }
           );
         },
-        
+
         onCancelCarpet: function ( evt )
         {
           dojo.stopEvent( evt );
-          
+
           this.setCarpetActions();
         },
-        
+
         onClickCell: function( evt )
         {
           if( ! this.checkAction( 'placeCarpet' ) )
           { return; }
-          
+
           // Action id is on the form 'square_action_x_y'
           var action_id = evt.target.id;
           var action_infos = action_id.split('_');
           var x = action_infos[2];
           var y = action_infos[3];
-          
+
           if (dojo.hasClass(action_id, 'selected'))
           {
             return;
           }
-          
+
           if (this.carpetPlaced.x1 == null && this.carpetPlaced.y1 == null)
           {
             this.carpetPlaced.x1 = x;
             this.carpetPlaced.y1 = y;
-            
+
             dojo.query('#' + action_id).style({
               backgroundColor: 'rgba(0,255,0,0.4)'
             })
@@ -560,7 +479,7 @@ function (dojo, declare) {
               display: 'none',
               backgroundColor: 'transparent'
             });
-            
+
             // Set square_action for 2d carpet cell
             if ( x > 1 && ( (parseInt(x)-1) != this.assamPosition.x || parseInt(y) != this.assamPosition.y ) )
             {
@@ -595,7 +514,7 @@ function (dojo, declare) {
           {
             this.carpetPlaced.x2 = x;
             this.carpetPlaced.y2 = y;
-            
+
             dojo.query('#' + action_id).style({
               backgroundColor: 'rgba(0,255,0,0.4)'
             })
@@ -606,24 +525,24 @@ function (dojo, declare) {
             });
           }
         },
-        
+
         /*
-        
-            Here, you are defining methods to handle player's action (ex: results of mouse click on 
+
+            Here, you are defining methods to handle player's action (ex: results of mouse click on
             game objects).
-            
+
             Most of the time, these methods:
             _ check the action is possible at this game state.
             _ make a call to the game server
-        
+
         */
-        
+
         /* Example:
-        
+
         onMyMethodToCall1: function( evt )
         {
             console.log( 'onMyMethodToCall1' );
-            
+
             // Preventing default browser reaction
             dojo.stopEvent( evt );
 
@@ -631,72 +550,72 @@ function (dojo, declare) {
             if( ! this.checkAction( 'myAction' ) )
             {   return; }
 
-            this.ajaxcall( "/marrakech/marrakech/myAction.html", { 
-                                                                    lock: true, 
-                                                                    myArgument1: arg1, 
+            this.ajaxcall( "/marrakech/marrakech/myAction.html", {
+                                                                    lock: true,
+                                                                    myArgument1: arg1,
                                                                     myArgument2: arg2,
                                                                     ...
-                                                                 }, 
+                                                                 },
                          this, function( result ) {
-                            
+
                             // What to do after the server call if it succeeded
                             // (most of the time: nothing)
-                            
+
                          }, function( is_error) {
 
                             // What to do after the server call in anyway (success or failure)
                             // (most of the time: nothing)
 
-                         } );        
-        },        
-        
+                         } );
+        },
+
         */
 
-        
+
         ///////////////////////////////////////////////////
         //// Reaction to cometD notifications
 
         /*
             setupNotifications:
-            
+
             In this method, you associate each of your game notifications with your local method to handle it.
-            
+
             Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
                   your marrakech.game.php file.
-        
+
         */
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
-            
+
             dojo.subscribe( "assamDirection", this, "notif_assamDirection" );
             this.notifqueue.setSynchronous( "assamDirection", 1500 );
-            
+
             dojo.subscribe( "diceRoll", this, "notif_diceRoll" );
             this.notifqueue.setSynchronous( "diceRoll", 1500 );
-            
+
             dojo.subscribe( "payTaxes", this, "notif_payTaxes" );
             this.notifqueue.setSynchronous( "payTaxes", 1500 );
-            
+
             dojo.subscribe( "carpetPlaced", this, "notif_carpetPlaced" );
             this.notifqueue.setSynchronous( "carpetPlaced", 1500 );
-            
+
             dojo.subscribe( "updateScores", this, "notif_updateScores" );
-            
+
             dojo.subscribe( "playerEliminatedInfos", this, "notif_playerEliminatedInfos" );
-            
-            
+
+
             // Example 1: standard notification handling
             // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            
+
             // Example 2: standard notification handling + tell the user interface to wait
             //            during 3 seconds after calling the method in order to let the players
             //            see what is happening in the game.
             // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
             // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            // 
-        },  
-        
+            //
+        },
+
         notif_assamDirection: function( notif )
         {
           if ( notif.args.newAssamDirection )
@@ -706,14 +625,14 @@ function (dojo, declare) {
             this.assamPosition.direction = notif.args.newAssamDirection;
           }
         },
-        
+
         notif_diceRoll: function( notif )
         {
           // Show the result of the die
           dojo.removeClass( 'dice' );
           dojo.addClass( 'dice', 'dice_' + notif.args.roll );
           dojo.style( 'dice', 'display', 'block' );
-          
+
           if ( notif.args.path && notif.args.path.length > 0 )
           {
             var slides = [];
@@ -736,7 +655,7 @@ function (dojo, declare) {
             direction: notif.args.assam.direction
           };
         },
-        
+
         notif_payTaxes: function( notif )
         {
           var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', {
@@ -750,7 +669,7 @@ function (dojo, declare) {
           dojo.byId('money_' + notif.args.playerId + '_count').innerHTML = notif.args.playerMoney;
           dojo.byId('money_' + notif.args.playerTaxesId + '_count').innerHTML = notif.args.playerTaxesMoney;
         },
-        
+
         notif_carpetPlaced: function( notif )
         {
           if( this.playersNumber == 2 )
@@ -764,14 +683,14 @@ function (dojo, declare) {
             else
             {
               var current_next_carpet = dojo.query( '#player_board_' + notif.args.playerId + ' .carpet_info_' + notif.args.nextCarpet )[0];
-              
+
               dojo.destroy('next_carpet_' + notif.args.playerId);
               dojo.place( this.format_block( 'jstpl_next_carpet', {
                 id: notif.args.playerId
               } ) , current_next_carpet );
             }
           }
-          
+
           dojo.place( this.format_block( 'jstpl_carpet', {
               carpet_id: notif.args.carpet_id,
               carpet_type: notif.args.carpet_type,
@@ -782,11 +701,11 @@ function (dojo, declare) {
           });
           this.placeOnObject( 'carpet_' + notif.args.carpet_id, 'overall_player_board_'+ notif.args.playerId );
           this.slideToObjectPos( 'carpet_' + notif.args.carpet_id, 'square_' + notif.args.x + '_' + notif.args.y, 0, 0 ).play();
-          
+
           // Update carpet counter for active player
           dojo.byId('carpet_' + notif.args.carpet_type + '_count').innerHTML = notif.args.carpets_left;
         },
-        
+
         notif_updateScores: function( notif )
         {
           // Update scores
@@ -800,7 +719,7 @@ function (dojo, declare) {
             }
           }
         },
-        
+
         notif_playerEliminatedInfos: function( notif )
         {
           // Reset carpets for this player and disable panel
@@ -811,23 +730,23 @@ function (dojo, declare) {
             dojo.byId('carpet_' + carpet_type_bis + '_count').innerHTML = '0';
             dojo.destroy('next_carpet_' + notif.args.playerId);
           }
-          
+
           this.disablePlayerPanel( notif.args.playerId );
         },
-        
+
         /*
         Example:
-        
+
         notif_cardPlayed: function( notif )
         {
             console.log( 'notif_cardPlayed' );
             console.log( notif );
-            
+
             // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-            
+
             // TODO: play the card in the user interface.
-        },    
-        
+        },
+
         */
-   });             
+   });
 });

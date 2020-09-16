@@ -15,99 +15,57 @@
  *
  */
 
-/*
-    In this file, you are describing game statistics, that will be displayed at the end of the
-    game.
-    
-    !! After modifying this file, you must use "Reload  statistics configuration" in BGA Studio backoffice
-    ("Control Panel" / "Manage Game" / "Your Game")
-    
-    There are 2 types of statistics:
-    _ table statistics, that are not associated to a specific player (ie: 1 value for each game).
-    _ player statistics, that are associated to each players (ie: 1 value for each player in the game).
+$stats_type = [
+  "table" => [
+    "table_turns_number" => [
+      "id" => 10,
+      "name" => totranslate("Number of turns"),
+      "type" => "int"
+    ],
 
-    Statistics types can be "int" for integer, "float" for floating point values, and "bool" for boolean
-    
-    Once you defined your statistics there, you can start using "initStat", "setStat" and "incStat" method
-    in your game logic, using statistics names defined below.
-    
-    !! It is not a good idea to modify this file when a game is running !!
+    "table_largest_carpet_zone" => [
+      "id" => 13,
+      "name" => totranslate("Largest carpet zone"),
+      "type" => "int"
+    ],
 
-    If your game is already public on BGA, please read the following before any change:
-    http://en.doc.boardgamearena.com/Post-release_phase#Changes_that_breaks_the_games_in_progress
-    
-    Notes:
-    * Statistic index is the reference used in setStat/incStat/initStat PHP method
-    * Statistic index must contains alphanumerical characters and no space. Example: 'turn_played'
-    * Statistics IDs must be >=10
-    * Two table statistics can't share the same ID, two player statistics can't share the same ID
-    * A table statistic can have the same ID than a player statistics
-    * Statistics ID is the reference used by BGA website. If you change the ID, you lost all historical statistic data. Do NOT re-use an ID of a deleted statistic
-    * Statistic name is the English description of the statistic as shown to players
-    
-*/
-
-$stats_type = array(
-
-    // Statistics global to table
-    "table" => array(
-
-        "table_turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
-                    "type" => "int" ),
-        "table_largest_carpet_zone" => array("id" => 13,
-                    "name" => totranslate("Largest carpet zone"),
-                    "type" => "int" ),
-        "table_highest_taxes_collected" => array("id" => 14,
-                    "name" => totranslate("Highest taxes collected"),
-                    "type" => "int" ),
-
-/*
-        Examples:
+    "table_highest_taxes_collected" => [
+      "id" => 14,
+      "name" => totranslate("Highest taxes collected"),
+      "type" => "int"
+    ],
+  ],
 
 
-        "table_teststat1" => array(   "id"=> 10,
-                                "name" => totranslate("table test stat 1"), 
-                                "type" => "int" ),
-                                
-        "table_teststat2" => array(   "id"=> 11,
-                                "name" => totranslate("table test stat 2"), 
-                                "type" => "float" )
-*/  
-    ),
-    
-    // Statistics existing for each player
-    "player" => array(
+  "player" => [
+    "player_turns_number" => [
+      "id" => 10,
+      "name" => totranslate("Number of turns"),
+      "type" => "int"
+    ],
 
-        "player_turns_number" => array("id"=> 10,
-                    "name" => totranslate("Number of turns"),
-                    "type" => "int" ),
-        "player_money_paid" => array("id" => 11,
-                    "name" => totranslate("Money paid"),
-                    "type" => "int" ),
-        "player_money_earned" => array("id" => 12,
-                    "name" => totranslate("Money earned"),
-                    "type" => "int" ),
-        "player_largest_carpet_zone" => array("id" => 13,
-                    "name" => totranslate("Largest carpet zone"),
-                    "type" => "int" ),
-        "player_highest_taxes_collected" => array("id" => 14,
-                    "name" => totranslate("Highest taxes collected"),
-                    "type" => "int" ),
-    
-/*
-        Examples:    
-        
-        
-        "player_teststat1" => array(   "id"=> 10,
-                                "name" => totranslate("player test stat 1"), 
-                                "type" => "int" ),
-                                
-        "player_teststat2" => array(   "id"=> 11,
-                                "name" => totranslate("player test stat 2"), 
-                                "type" => "float" )
+    "player_money_paid" => [
+      "id" => 11,
+      "name" => totranslate("Money paid"),
+      "type" => "int"
+    ],
 
-*/    
-    )
+    "player_money_earned" => [
+      "id" => 12,
+      "name" => totranslate("Money earned"),
+      "type" => "int"
+    ],
 
-);
+    "player_largest_carpet_zone" => [
+      "id" => 13,
+      "name" => totranslate("Largest carpet zone"),
+      "type" => "int"
+    ],
+
+    "player_highest_taxes_collected" => [
+      "id" => 14,
+      "name" => totranslate("Highest taxes collected"),
+      "type" => "int"
+    ],
+  ]
+];

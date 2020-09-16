@@ -15,29 +15,29 @@
 
 /*
     This is the CSS stylesheet of your game User Interface.
-    
+
     Styles defined on this file will be applied to the HTML elements you define in your
     HTML template (marrakech_marrakech.tpl), and to HTML elements you create dynamically
     (in marrakech.js).
-    
+
     Usually, you are using CSS to:
-    
+
     1°) define the overall layout of your game
         (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
 
     2°) create your CSS-sprites:
         All images of your games should be gathered into a small number of image files. Then, using
-        background-image and background-position CSS properties, you create HTML blocks that can 
+        background-image and background-position CSS properties, you create HTML blocks that can
         display these images correctly (see example below).
-    
+
     3°) ... anything else:
         It is really easy to add and remove CSS classes dynamically from your Javascript with
         dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
         (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
         very often, using CSS classes for the logic of your user interface allow you to do complex
         thing easily.
-        
-        
+
+
      Note: on the production platform, this file will be compressed and comments will be removed.
            Consequently, don't hesitate to put as many comments as necessary.
 */
@@ -87,13 +87,7 @@
   margin-right: 10px;
 }
 
-#board {
-  position: relative;
-  width: 720px;
-  height: 720px;
-  background-image: url('img/marrakech_board_sat_85.jpg');
-  background-color: transparent;
-}
+
 
 #dice {
   display: none;
@@ -117,10 +111,21 @@
   margin: 5px;
 }
 
-.square {
+
+
+#board {
+  position: relative;
+  width: 720px;
+  height: 720px;
+  background-image: url('img/marrakech_board_sat_85.jpg');
+  display: grid;
+  grid-template-columns: repeat(9,1fr);
+  grid-template-rows: repeat(9,1fr);
+}
+
+#board .square {
   width: 80px;
   height: 80px;
-  position: absolute;
 }
 
 .square_action {
@@ -133,6 +138,7 @@
   box-sizing: border-box;
 }
 
+
 #assam {
   position: absolute;
   width: 80px;
@@ -140,11 +146,10 @@
   background-image: url('img/marrakech_assam.png');
   z-index: 500;
 }
-
-.direction_S { background-position: -80px 0px; }
-.direction_E { background-position: -160px 0px; }
-.direction_N { background-position: -240px 0px; }
-.direction_W { background-position: -320px 0px; }
+.direction_0 { transform:rotate(180deg); }
+.direction_1 { transform:rotate(-90deg); }
+.direction_2 { transform:rotate(0deg); }
+.direction_3 { transform:rotate(90deg); }
 
 .next_direction {
   position: absolute;
@@ -189,10 +194,10 @@
   height: 30px;
 }
 
-.carpet_info_1 { background-position: 0px 0px; }
-.carpet_info_2 { background-position: -60px 0px; }
-.carpet_info_3 { background-position: 0px -30px; }
-.carpet_info_4 { background-position: -60px -30px; }
+#carpet_info_1 { background-position: 0px 0px; }
+#carpet_info_2 { background-position: -60px 0px; }
+#carpet_info_3 { background-position: 0px -30px; }
+#carpet_info_4 { background-position: -60px -30px; }
 
 .next_carpet {
   position: absolute;
