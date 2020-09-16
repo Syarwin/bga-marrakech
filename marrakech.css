@@ -1,0 +1,226 @@
+/**
+ *------
+ * BGA framework: © Gregory Isabelli <gisabelli@boardgamearena.com> & Emmanuel Colin <ecolin@boardgamearena.com>
+ * Marrakech implementation : © Tanguy Dechiron <tanguy.dechiron@gmail.com>
+ *
+ * This code has been produced on the BGA studio platform for use on http://boardgamearena.com.
+ * See http://en.boardgamearena.com/#!doc/Studio for more information.
+ * -----
+ *
+ * marrakech.css
+ *
+ * Marrakech stylesheet
+ *
+ */
+
+/*
+    This is the CSS stylesheet of your game User Interface.
+    
+    Styles defined on this file will be applied to the HTML elements you define in your
+    HTML template (marrakech_marrakech.tpl), and to HTML elements you create dynamically
+    (in marrakech.js).
+    
+    Usually, you are using CSS to:
+    
+    1°) define the overall layout of your game
+        (ex: place the board on the top left, place player's hand beside, place the deck on the right, ...).
+
+    2°) create your CSS-sprites:
+        All images of your games should be gathered into a small number of image files. Then, using
+        background-image and background-position CSS properties, you create HTML blocks that can 
+        display these images correctly (see example below).
+    
+    3°) ... anything else:
+        It is really easy to add and remove CSS classes dynamically from your Javascript with
+        dojo.addClass and dojo.removeClass. It is also easy to check if an element has a class
+        (dojo.hasClass) or to get all elements with a specific class (dojo.query). This is why,
+        very often, using CSS classes for the logic of your user interface allow you to do complex
+        thing easily.
+        
+        
+     Note: on the production platform, this file will be compressed and comments will be removed.
+           Consequently, don't hesitate to put as many comments as necessary.
+*/
+
+
+/* Note: you must not use any @import directive */
+
+
+/********* You can start writing your CSS below this line: **********/
+
+
+/*
+    Example of CSS sprites (a black token and a white token, 20x20px each, embedded in the same "tokens.png" 40x20px image):
+
+    .white_token {
+        background-image: url('img/tokens.png');
+        background-position: 0px 0px;
+    }
+    .black_token {
+        background-image: url('img/tokens.png');
+        background-position: -20px 0px;
+    }
+    .token {
+        width: 20px;
+        height: 20px;
+        background-repeat: none;
+    }
+*/
+
+.container {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px;
+}
+
+#dice_display {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 140px;
+  height: 140px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+#board {
+  position: relative;
+  width: 720px;
+  height: 720px;
+  background-image: url('img/marrakech_board_sat_85.jpg');
+  background-color: transparent;
+}
+
+#dice {
+  display: none;
+  width: 120px;
+  height: 120px;
+  background-image: url('img/marrakech_die.png');
+  background-color: transparent;
+}
+
+.dice_1 { background-position: 0px 0px; }
+.dice_2 { background-position: -120px 0px; }
+.dice_3 { background-position: -360px 0px; }
+.dice_4 { background-position: -600px 0px; }
+
+.player_info * {
+  vertical-align: middle;
+}
+
+.player_info {
+  display: inline-block;
+  margin: 5px;
+}
+
+.square {
+  width: 80px;
+  height: 80px;
+  position: absolute;
+}
+
+.square_action {
+  display: none;
+  width: 80px;
+  height: 80px;
+  position: absolute;
+  z-index: 100;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+#assam {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background-image: url('img/marrakech_assam.png');
+  z-index: 500;
+}
+
+.direction_S { background-position: -80px 0px; }
+.direction_E { background-position: -160px 0px; }
+.direction_N { background-position: -240px 0px; }
+.direction_W { background-position: -320px 0px; }
+
+.next_direction {
+  position: absolute;
+  display: none;
+  width: 80px;
+  height: 80px;
+  background-image: url('img/marrakech_arrows.png');
+  z-index: 500;
+  cursor: pointer;
+}
+
+#next_direction_S { background-position: 0px 0px; }
+#next_direction_E { background-position: -80px 0px; }
+#next_direction_N { background-position: -160px 0px; }
+#next_direction_W { background-position: -240px 0px; }
+
+.carpet {
+  position: absolute;
+  background-image: url('img/marrakech_rugs.png');
+  border: 1px #333 solid;
+  z-index: 10;
+  box-sizing: border-box;
+}
+
+.carpet_h { width: 160px; height: 80px; }
+.carpet_v { width: 80px; height: 160px; }
+
+.carpet_yellow_h, .carpet_1_h { background-position: 0px 0px; }
+.carpet_yellow_v, .carpet_1_v { background-position: 0px -160px; }
+.carpet_red_h, .carpet_2_h { background-position: -160px 0px; }
+.carpet_red_v, .carpet_2_v { background-position: -80px -160px; }
+.carpet_orange_h, .carpet_3_h { background-position: 0px -80px; }
+.carpet_orange_v, .carpet_3_v { background-position: -160px -160px; }
+.carpet_blue_h, .carpet_4_h { background-position: -160px -80px; }
+.carpet_blue_v, .carpet_4_v { background-position: -240px -160px; }
+
+.carpet_info {
+  display: inline-block;
+  background-image: url('img/marrakech_rugs_small.png');
+  border: 1px #333 solid;
+  width: 60px;
+  height: 30px;
+}
+
+.carpet_info_1 { background-position: 0px 0px; }
+.carpet_info_2 { background-position: -60px 0px; }
+.carpet_info_3 { background-position: 0px -30px; }
+.carpet_info_4 { background-position: -60px -30px; }
+
+.next_carpet {
+  position: absolute;
+  background-image: url('img/checked.png');
+  width: 16px;
+  height: 16px;
+}
+
+.money {
+  position: relative;
+  display: inline-block;
+  background-image: url('img/money.png');
+  width: 60px;
+  height: 30px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+}
+
+.tax_inc,
+.tax_dec {
+  position: absolute;
+  width: 30px;
+  right: -8px;
+  top: -6px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.tax_inc { color: green; }
+.tax_dec { color: red; }
