@@ -20,6 +20,7 @@
  */
 
 require_once("modules/constants.inc.php");
+require_once("modules/Utils.class.php");
 require_once("modules/MarrakechPlayerManager.class.php");
 require_once("modules/MarrakechBoard.class.php");
 require_once("modules/MarrakechAssam.class.php");
@@ -30,8 +31,8 @@ require_once("modules/NotificationManager.class.php");
 $this->marrakechDice = [
   1 => 1,
   2 => 2,
-  3 => 2,
-  4 => 3,
+  3 => 4,
+  4 => 2,
   5 => 3,
-  6 => 4
+  6 => 3
 ];

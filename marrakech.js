@@ -62,6 +62,8 @@ setup: function (gamedatas) {
   // Setting up Assam
   this.setAssam(gamedatas.assam);
 
+  // Click listener for dice
+  dojo.connect($("dice"), 'click', () => this.rollDice());
 /*
   TODO
             var carpets_on_board = gamedatas.carpets_on_board;
@@ -75,6 +77,9 @@ setup: function (gamedatas) {
 
         },
 */
+
+  // Setup game notifications
+  this.setupNotifications();
 },
 
 
@@ -168,12 +173,17 @@ onEnteringState: function (stateName, args) {
  */
 onLeavingState: function (stateName) {
 	debug('Leaving state: ' + stateName);
-//	this.clearPossible(); TODO
+	this.clearPossible();
 },
 
 
 
 
+////////////////////////////
+////////////////////////////
+///////		Utility 		//////
+////////////////////////////
+////////////////////////////
 
 
 /*
@@ -187,14 +197,23 @@ takeAction: function (action, data, callback) {
 },
 
 
-////////////////////////////////
-////////////////////////////////
-///////		Rotate Assam		//////
-////////////////////////////////
-////////////////////////////////
-onEnteringStateRotateAssam: function() {
-  //  dojo.removeClass( "assam" ); ??
+clearPossible: function(){
+  dojo.query(".next_direction").style('display', 'none');
+  dojo.forEach( this.nextDirectionConnections, dojo.disconnect);
 
+},
+
+
+////////////////////////
+////////////////////////
+///////		Assam		//////
+////////////////////////
+////////////////////////
+
+/////////////
+// Rotate  //
+/////////////
+onEnteringStateRotateAssam: function() {
   var directions = [
     { n: 'N', x:0,  'y':-1},
     { n: 'E', x:1,  'y':0},
@@ -223,65 +242,87 @@ rotateAssam: function(delta){
 },
 
 
+
+////////////
+//  Move  //
+////////////
+onEnteringStateMoveAssam: function() {
+  dojo.addClass("dice", 'clickable');
+  this.addActionButton('btnRollDice', _('Roll dice'), 'rollDice');
+},
+
+
+rollDice: function(){
+  if(!this.checkAction('rollDice'))
+    return;
+
+  this.takeAction('rollDice', {});
+},
+
+
+notif_rollDice: function(n){
+  if(n.args.face == 0)
+    dojo.attr('dice', 'data-show', '0');
+  else {
+    dojo.attr('dice', 'data-show', n.args.face);
+    dojo.addClass("dice", "roll");
+    setTimeout( () => {
+      dojo.attr('dice', 'data-show', n.args.face);
+      dojo.removeClass("dice", "roll");
+    }, 1500);
+  }
+},
+
+
+//////////////
+//  Notifs  //
+//////////////
+notif_rotateAssam: function(n){
+  debug("Notif: rotate Assam", n);
+  dojo.attr('assam', 'data-dir', n.args.assam.dir);
+},
+
+notif_moveAssam: function(n){
+  debug("Notif: move Assam", n);
+  this.slideToObject( 'assam', 'square_' + n.args.assam.x + '_' + n.args.assam.y, 500).play();
+},
+
+
+///////////////////////////////////////////////////
+//////	 Reaction to cometD notifications	 ///////
+///////////////////////////////////////////////////
+
 /*
-        ///////////////////////////////////////////////////
-        //// Game & client states
+ * setupNotifications:
+ *	In this method, you associate each of your game notifications with your local method to handle it.
+ *	Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" in the santorini.game.php file.
+ */
+setupNotifications: function () {
+	var notifs = [
+		['rotateAssam', 500],
+    ['moveAssam', 500],
+    ['rollDice', 2000],
+	];
 
-        // onEnteringState: this method is called each time we are entering into a new game state.
-        //                  You can use this method to perform some user interface changes at this moment.
-        //
-        onEnteringState: function( stateName, args )
-        {
-            console.log( 'Entering state: '+stateName );
-
-            switch( stateName )
-            {
-              case 'assamDirection':
-                if( this.isCurrentPlayerActive() )
-                {
-                  this.setAssamDirections();
-                }
-                break;
-
-              case 'placeCarpet':
-                if( this.isCurrentPlayerActive() )
-                {
-                  this.setCarpetActions();
-                }
-                break;
-
-        },
-
-        // onLeavingState: this method is called each time we are leaving a game state.
-        //                 You can use this method to perform some user interface changes at this moment.
-        //
-        onLeavingState: function( stateName )
-        {
-            console.log( 'Leaving state: '+stateName );
-
-            switch( stateName )
-            {
-              case 'assamMove':
-                // Hide the die
-                dojo.style( 'dice', 'display', 'none' );
-                break;
-
-            /* Example:
-
-            case 'myGameState':
-
-                // Hide the HTML block we are displaying only during this game state
-                dojo.style( 'my_html_block_id', 'display', 'none' );
-
-                break;
-           *
+	notifs.forEach(notif => {
+		dojo.subscribe(notif[0], this, "notif_" + notif[0]);
+		this.notifqueue.setSynchronous(notif[0], notif[1]);
+	});
+},
 
 
-            case 'dummmy':
-                break;
-            }
-        },
-*/
+
+
+
+
+
+
+
+
+
+
+
+
         // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
         //                        action status bar (ie: the HTML links in the status bar).
         //
@@ -340,17 +381,13 @@ rotateAssam: function(delta){
 
 
 
-        removeAssamDirections: function() {
-          dojo.query(".next_direction").style({
-            display: 'none'
-          });
-          dojo.forEach( this.next_direction_connections, dojo.disconnect);
-        },
 
         setCarpetActions: function()
         {
           // Initialize carpet actions
-          this.carpetPlaced = {
+          this.carpetPlaced = {        removeAssamDirections: function() {
+        },
+
             x1: null,
             y1: null,
             x2: null,
@@ -583,7 +620,6 @@ rotateAssam: function(delta){
             Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
                   your marrakech.game.php file.
 
-        */
         setupNotifications: function()
         {
             console.log( 'notifications subscriptions setup' );
@@ -616,46 +652,7 @@ rotateAssam: function(delta){
             //
         },
 
-        notif_assamDirection: function( notif )
-        {
-          if ( notif.args.newAssamDirection )
-          {
-            dojo.removeClass( "assam" );
-            dojo.addClass( "assam", "direction_" + notif.args.newAssamDirection );
-            this.assamPosition.direction = notif.args.newAssamDirection;
-          }
-        },
-
-        notif_diceRoll: function( notif )
-        {
-          // Show the result of the die
-          dojo.removeClass( 'dice' );
-          dojo.addClass( 'dice', 'dice_' + notif.args.roll );
-          dojo.style( 'dice', 'display', 'block' );
-
-          if ( notif.args.path && notif.args.path.length > 0 )
-          {
-            var slides = [];
-            dojo.removeClass( "assam" );
-            for(var i=0; i<notif.args.path.length; i++)
-            {
-              point = notif.args.path[i];
-              var anim = this.slideToObject( 'assam', 'square_' + point.x + '_' + point.y, 250 );
-              slides.push(anim);
-            }
-          }
-          var chain = dojo.fx.chain(slides);
-          chain.onEnd = function() {
-            dojo.addClass( "assam", "direction_" + notif.args.assam.direction );
-          }
-          chain.play();
-          this.assamPosition = {
-            x: notif.args.assam.x,
-            y: notif.args.assam.y,
-            direction: notif.args.assam.direction
-          };
-        },
-
+*/
         notif_payTaxes: function( notif )
         {
           var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', {

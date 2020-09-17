@@ -16,11 +16,16 @@
     <div class="next_direction" id="next_direction_W"></div>
   </div>
 
-  <div class="whiteblock" id="dice_display">
-    <div id="dice">
+  <div class="whiteblock" id="dice-container">
+    <div id="dice" data-show="0">
+      <div class="face1"></div>
+      <div class="face2"></div>
+      <div class="face3"></div>
+      <div class="face4"></div>
+      <div class="face5"></div>
+      <div class="face6"></div>
     </div>
   </div>
-
 </div>
 
 
@@ -28,7 +33,7 @@
 
 // Javascript HTML templates
 
-var jstpl_assam = '<div id="assam" class="direction_${dir}"></div>';
+var jstpl_assam = '<div id="assam" data-dir="${dir}"></div>';
 var jstpl_carpet = '<div id="carpet_${carpet_id}" class="carpet carpet_${carpet_orientation} carpet_${carpet_type}_${carpet_orientation}"></div>';
 
 var jstpl_carpet_info = `

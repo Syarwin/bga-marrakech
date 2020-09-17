@@ -3,35 +3,48 @@
 class MarrakechAssam extends APP_GameClass
 {
   public static function init(){
-    Marrakech::$instance->setGameStateInitialValue('assamX',   4);
-    Marrakech::$instance->setGameStateInitialValue('assamY',   4);
-    Marrakech::$instance->setGameStateInitialValue('assamDir', SOUTH);
+    self::DbQuery("INSERT INTO assam (x,y,dir) VALUES (4,4,2)");
   }
 
   /*
    * Return Assam state as associative array : x,y and dir
    */
   public static function get() {
-    return [
-      'x'   => (int) Marrakech::$instance->getGameStateValue('assamX'),
-      'y'   => (int) Marrakech::$instance->getGameStateValue('assamX'),
-      'dir' => (int) Marrakech::$instance->getGameStateValue('assamDir'),
-    ];
+    $assam = self::getObjectFromDB("SELECT * FROM assam LIMIT 1");
+    $assam = array_map('intval', $assam);
+    return $assam;
   }
 
 
   /*
    * Set the new position/direction of Assam and notify frontend
    */
-  public static function set($state, $silent = false){
-    Marrakech::$instance->setGameStateValue('assamX',   $state['x']);
-    Marrakech::$instance->setGameStateValue('assamY',   $state['y']);
-    Marrakech::$instance->setGameStateValue('assamDir', $state['dir']);
+  public static function set($state){
+    $assam = self::get();
+    self::DbQuery("UPDATE assam SET x = {$state['x']}, y = {$state['y']}, dir = {$state['dir']}");
 
-    if(!$silent){
+    if($assam['dir'] != $state['dir']){
+      NotificationManager::rotateAssam($state);
+    }
+
+    if($assam['x'] != $state['x'] || $assam['y'] != $state['y']){
       NotificationManager::moveAssam($state);
     }
   }
+
+
+  /*
+   * Rotate Assam : +1 for right, -1 for left, 0 for skip
+   */
+  public static function rotate($d){
+    $assam = self::get();
+    self::set([
+      'x' => $assam['x'],
+      'y' => $assam['y'],
+      'dir' => ($assam['dir'] + $d + 4) % 4,
+    ]);
+  }
+
 
 
   /*
@@ -62,17 +75,6 @@ class MarrakechAssam extends APP_GameClass
     return self::$board[$assam['y']][8 - $assam['x']];
   }
 
-  /*
-   *
-   */
-  public static function rotate($d, $silent = false){
-    $assam = self::get();
-    self::set([
-      'x' => $assam['x'],
-      'y' => $assam['y'],
-      'dir' => ($assam['dir'] + $d + 4) % 4,
-    ], $silent);
-  }
 
 
   /*
@@ -95,7 +97,7 @@ class MarrakechAssam extends APP_GameClass
     $rotation = null;
     do {
       if(!is_null($rotation))
-        self::rotate($rotation, true);
+        self::rotate($rotation == 'R'? 1 : -1);
       self::moveForward();
 
       $caseRotation = self::getCaseRotation();
@@ -106,14 +108,14 @@ class MarrakechAssam extends APP_GameClass
   }
 
 
+  /*
+   * move : move $roll steps
+   */
   public static function move($roll){
     for ($i = 0; $i < $roll; $i++)
       self::moveOneStep();
   }
 }
-
-
-
 
 
 /*

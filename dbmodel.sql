@@ -22,12 +22,19 @@ CREATE TABLE IF NOT EXISTS `player_carpets` (
   PRIMARY KEY (`player_id`)
 ) ENGINE=InnoDB;
 
-CREATE TABLE IF NOT EXISTS `board` (
-  `turn` int NOT NULL AUTO_INCREMENT,
-  `board_x` smallint(5) unsigned NOT NULL,
-  `board_y` smallint(5) unsigned NOT NULL,
-  `carpet_type` smallint(5) unsigned NOT NULL,
-  `carpet_orientation` varchar(1) NOT NULL,
+CREATE TABLE IF NOT EXISTS `carpets` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `x` smallint(5) unsigned NOT NULL,
+  `y` smallint(5) unsigned NOT NULL,
+  `type` smallint(5) unsigned NOT NULL,
+  `orientation` varchar(1) NOT NULL,
   `player_id` int(10) unsigned DEFAULT NULL,
-  PRIMARY KEY (`turn`)
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS `assam` (
+  `x` smallint(5) unsigned NOT NULL,
+  `y` smallint(5) unsigned NOT NULL,
+  `dir` smallint(5) unsigned NOT NULL,
+  PRIMARY KEY (`x`,`y`)
 ) ENGINE=InnoDB;

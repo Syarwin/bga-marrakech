@@ -28,9 +28,6 @@ class Marrakech extends Table
 
 		self::initGameStateLabels([
 			"RotateAssam" => OPTION_ROTATE_ASSAM,
-			'assamX' => ASSAM_X,
-			'assamY' => ASSAM_Y,
-			'assamDir' => ASSAM_DIR,
 		]);
 	}
 
@@ -190,20 +187,23 @@ class Marrakech extends Table
 	/////////////////////////////////////
 	//////////// Move Assam  ////////////
 	/////////////////////////////////////
-	function stMoveAssam()
+	function rollDice()
 	{
-		/*
+/*
 		$player_id = self::getActivePlayerId();
 		$player_name = self::getActivePlayerName();
 		$player_eliminated = false;
+*/
 
 		// Roll die and move Assam
-		$roll = $this->marrakechDice[bga_rand(1, 6)];
-		MarrakechBoard::moveAssam($roll);
-		MarrakechBoard::payTaxes();
-		*/
+		$face = bga_rand(1, 6);
+		$roll = $this->marrakechDice[$face];
+		NotificationManager::rollDice($face, $roll);
+		MarrakechAssam::move($roll);
+//		MarrakechBoard::payTaxes();
 
-		$this->gamestate->nextState("nextPlayer");
+		$this->gamestate->nextState("roll");
+//		$this->gamestate->nextState("nextPlayer");
 	}
 
 

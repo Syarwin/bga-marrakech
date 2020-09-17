@@ -77,31 +77,6 @@
   padding: 10px;
 }
 
-#dice_display {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 140px;
-  height: 140px;
-  margin-left: 10px;
-  margin-right: 10px;
-}
-
-
-
-#dice {
-  display: none;
-  width: 120px;
-  height: 120px;
-  background-image: url('img/marrakech_die.png');
-  background-color: transparent;
-}
-
-.dice_1 { background-position: 0px 0px; }
-.dice_2 { background-position: -120px 0px; }
-.dice_3 { background-position: -360px 0px; }
-.dice_4 { background-position: -600px 0px; }
-
 .player_info * {
   vertical-align: middle;
 }
@@ -144,12 +119,14 @@
   width: 80px;
   height: 80px;
   background-image: url('img/marrakech_assam.png');
+  background-position: 25% 0%;
   z-index: 500;
+  transition: transform 0.5s;
 }
-.direction_0 { transform:rotate(180deg); }
-.direction_1 { transform:rotate(-90deg); }
-.direction_2 { transform:rotate(0deg); }
-.direction_3 { transform:rotate(90deg); }
+#assam[data-dir="0"] { transform:rotate(180deg); }
+#assam[data-dir="1"] { transform:rotate(-90deg); }
+#assam[data-dir="2"] { transform:rotate(0deg); }
+#assam[data-dir="3"] { transform:rotate(90deg); }
 
 .next_direction {
   position: absolute;
@@ -229,3 +206,81 @@
 
 .tax_inc { color: green; }
 .tax_dec { color: red; }
+
+
+
+#dice-container {
+  width:200px;
+  height:200px;
+  perspective-origin:50% 50%;
+  perspective:500px;
+  margin-left: 10px;
+  margin-right: 10px;
+}
+
+
+#dice {
+  position:relative;
+  width:100%;
+  height:100%;
+  transform-style:preserve-3d;
+ 	transform-origin:center center;
+	transition: 3s transform ease-in;
+	animation-timing-function: linear;
+  animation-duration: 1.5s;
+}
+#dice.roll {
+  animation-name: roll;
+}
+
+#dice.clickable {
+  cursor:pointer;
+}
+
+@keyframes roll {
+  0%   {transform: rotateX(0deg) rotateY(0deg);}
+  10%   {transform: rotateX(187deg) rotateY(-100deg);}
+	20%   {transform: rotateX(-37deg) rotateY(-192deg);}
+	30%   {transform: rotateX(1deg) rotateY(37deg);}
+	40%   {transform: rotateX(-192deg) rotateY(-231deg);}
+	50%   {transform: rotateX(120deg) rotateY(190deg);}
+	60%   {transform: rotateX(350deg) rotateY(3deg);}
+  80%   {transform: rotateX(26deg) rotateY(-181deg);}
+  100%   {transform: rotateX(-1deg) rotateY(12deg);}
+}
+
+#dice div{
+  position:absolute;
+	top:60px;
+	left:60px;
+  width:80px;
+  height:80px;
+	backface-visibility:hidden;
+	background-image:url("img/marrakech_die.png");
+	background-size:cover;
+	background-color:#c3945e;
+}
+
+
+.face1  { transform: rotateY(  0deg) translateZ(40px); }
+.face2  { transform: rotateY( 90deg) translateZ(40px); }
+.face3  { transform: rotateY(180deg) translateZ(40px); }
+.face4  { transform: rotateY(-90deg) translateZ(40px); }
+.face5  { transform: rotateX( 90deg) translateZ(40px); }
+.face6  { transform: rotateX(-90deg) translateZ(40px); }
+
+
+.face1 { background-position:0% 0; }
+.face2 { background-position:20% 0; }
+.face3 { background-position:100% 0; }
+.face4 { background-position:40% 0; }
+.face5 { background-position:60% 0; }
+.face6 { background-position:80% 0; }
+
+
+#dice[data-show='1'] { transform:rotateX(0deg) rotateY(0deg); }
+#dice[data-show='2'] { transform:rotateX(0deg) rotateY(-90deg); }
+#dice[data-show='3'] { transform:rotateX(0deg) rotateY(180deg); }
+#dice[data-show='4'] { transform:rotateX(0deg) rotateY(90deg); }
+#dice[data-show='5'] { transform:rotateX(-90deg) rotateY(0deg); }
+#dice[data-show='6'] { transform:rotateX(90deg) rotateY(0deg); }

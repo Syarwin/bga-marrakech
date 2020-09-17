@@ -2,500 +2,138 @@
 
 class MarrakechBoard extends APP_GameClass
 {
-  public static function getUiData()
-  {
+  public static function getUiData(){
     return [];
   }
 
+
+  /*
+   *  Return the current status of board :  9*9 array with inside cell [x][y]
+   *    - either null if no carpet on this cell
+   *    - or visible carpet [id, type, pId] otherwise
+   */
+  function getBoard() {
+    $board = [];
+    for ($x = 0; $x <= 8; $x++) {
+      $board[] = [];
+      for ($y = 0; $y <= 8; $y++) {
+        $board[$x][] = null;
+      }
+    }
+
+    $sql = "SELECT * FROM carpet ORDER BY id ASC";
+    foreach (self::getObjectListFromDb($sql) as $carpet){
+      $data = [
+        'id' => $carpet['id'],
+        'type' => $carpet['type'],
+        'pId' => $carpet['player_id'],
+      ];
+
+      // Set first cell of carpet
+      $x = $carpet['x'];
+      $y = $carpet['y'];
+      $board[$x][$y] = $data;
+
+      // Set second cell of carpet
+      $x2 = $x + ($carpet['orientation'] == 'h'? 1 : 0);
+      $y2 = $y + ($carpet['orientation'] == 'v'? 1 : 0);
+      $board[$x2][$y2] = $data;
+    }
+
+    return $board;
+  }
+
+
+
+  function getTaxesZone($pId, $type, $pos){
+		$zone = [];
+		$queue = [];
+    $board = self::getBoard();
+
+    $board[$pos['x']][$pos['y']]['visited'] = true;
+		while(!empty($queue)){
+      $cell = array_shift($queue);
+      array_push($zone, $cell);
+
+      for($i = 0; $i < 4; $i++){
+        $npos = self::moveInDir($cell, $i);
+        // Position must be inside the board and not be on Asssam
+        if(!self::isPositionValidForCarpet($npos, $pos)) continue;
+        // Should contain a carpet
+        $carpet = $board[$npos['x']][$npos['y']];
+        if(is_null($carpet)) continue;
+        // Should not be already visited
+        if(array_key_exists('visited', $carpet)) continue;
+        $carpet['visited'] = true;
+        // Should belong to same player and same type of carpet (in particular for 2 players game)
+        if(($carpet['pId'] != $pId) || ($carpet['type'] != $type)) continue;
+
+        // If this is reached, add the pos to the queue to process it later
+        array_push($queue, $npos);
+      }
+    }
+
+    return $zone;
+  }
+
+
+  /*
+   * moveInDir : return new position if moving in given direction from starting pos
+   */
+  public static function moveInDir($pos, $dir){
+    return [
+      'x' => $pos['x'] + MarrakechAssam::$deltas[$dir]['x'],
+      'y' => $pos['y'] + MarrakechAssam::$deltas[$dir]['y'],
+    ];
+  }
+
+
+  /*
+   * isPositionValid : to place a carpet, the position must be inside the board, and not on Assam
+   */
+  public static function isPositionValid($pos, $assam){
+    return $pos['x'] > 0 && $pos['x'] < 8
+        && $pos['y'] > 0 && $pos['y'] < 8
+        && !($pos['x'] == $assam['x'] && $pos['y'] == $assam['y']);
+  }
+
+
+  /*
+   * getPossiblePlaces: return list of possible locations for placing a carpet
+   */
+  function getPossiblePlaces(){
+    $assam = MarrakechAssam::get();
+    $places = [];
+    for($i = 0; $i < 4; $i++){
+      $pos1 = self::moveInDir($assam, $i);
+      if(!self::isPositionValidForCarpet($pos1, $assam)) continue;
+
+      for($j = 0; $j < 4; $j++){
+        $pos2 = self::moveInDir($pos1, $j);
+        if(!self::isPositionValidForCarpet($pos2, $assam)) continue;
+
+        array_push($places, [
+          'x1' => $pos1['x'], 'y1' => $pos1['y'],
+          'x2' => $pos2['x'], 'y2' => $pos2['y']
+        ]);
+      }
+    }
+
+    // Keep only valid carpet places : cannot entirely cover opponent in one go
+		$board = $this->getBoard();
+    $pId = Marrakech::$instance->getActivePlayerId();
+    Utils::filter($places, function($s) use ($board, $pId){
+      return is_null($board[$s['x1']][$s['y1']]) || is_null($board[$s['x2']][$s['y2']]) // Either one of the two spot is empty
+        || $board[$s['x1']][$s['y1']]['id'] != $board[$s['x2']][$s['y2']]['id'] // Either the rug are not the same on the two spot
+        || $board[$s['x1']][$s['y1']]['pId'] == $pId; // Either the rub belongs to me (eventhough not very useful move...)
+    });
+
+    return $places;
+  }
+
+
+
 /*
-$sql = "SELECT assam_x x, assam_y y, direction FROM assam LIMIT 1";
-$result['assam'] = self::getObjectFromDB($sql);
-
-$sql =
-  "SELECT turn, board_x x, board_y y, carpet_type, carpet_orientation, player_id FROM board ORDER BY turn ASC";
-$result['carpets_on_board'] = self::getCollectionFromDb($sql);
-
-
-
-
-function getVisibleCarpetsOnBoard()
-{
-  $sql =
-    "SELECT turn, board_x x, board_y y, carpet_type, carpet_orientation, player_id FROM board ORDER BY turn ASC";
-  $carpets_on_board = self::getCollectionFromDb($sql);
-
-  $visibleCarpetsOnBoard = [];
-  for ($x = 0; $x <= 8; $x++) {
-    $visibleCarpetsOnBoard[] = [];
-    for ($y = 0; $y <= 8; $y++) {
-      $visibleCarpetsOnBoard[$x][] = null;
-    }
-  }
-
-  foreach ($carpets_on_board as $carpet) {
-    $carpet_id = $carpet['turn'];
-    $x = $carpet['x'];
-    $y = $carpet['y'];
-    $carpet_type = $carpet['carpet_type'];
-    $carpet_orientation = $carpet['carpet_orientation'];
-    $player_id = $carpet['player_id'];
-
-    if ($carpet_orientation == 'h') {
-      $x2 = $x + 1;
-      $y2 = $y;
-    } else {
-      $x2 = $x;
-      $y2 = $y + 1;
-    }
-
-    // Set first cell of carpet
-    $visibleCarpetsOnBoard[$x][$y] = [
-      'carpet_id' => $carpet_id,
-      'carpet_type' => $carpet_type,
-      'player_id' => $player_id,
-    ];
-
-    // Set second cell of carpet
-    $visibleCarpetsOnBoard[$x2][$y2] = [
-      'carpet_id' => $carpet_id,
-      'carpet_type' => $carpet_type,
-      'player_id' => $player_id,
-    ];
-  }
-
-  return $visibleCarpetsOnBoard;
-}
-
-
-
-
-function generateAssamPath($assam, $roll)
-{
-  $path = [];
-
-  $current_x = $assam['x'];
-  $current_y = $assam['y'];
-  $current_direction = $assam['direction'];
-
-  for ($i = 0; $i < $roll; $i++) {
-    switch ($current_direction) {
-      case 'S':
-        $current_y += 1;
-        break;
-      case 'E':
-        $current_x += 1;
-        break;
-      case 'N':
-        $current_y -= 1;
-        break;
-      case 'W':
-        $current_x -= 1;
-        break;
-    }
-
-    $path[] = [
-      'x' => $current_x,
-      'y' => $current_y,
-      'direction' => $current_direction,
-    ];
-
-    // Check if on a border of the board
-    if ($current_x == 0) {
-      switch ($current_y) {
-        case 1:
-        case 3:
-        case 5:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y + 1,
-            'direction' => 'E',
-          ];
-          break;
-        case 2:
-        case 4:
-        case 6:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y - 1,
-            'direction' => 'E',
-          ];
-          break;
-        case 7:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y + 1,
-            'direction' => 'E',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y,
-            'direction' => 'N',
-          ];
-          break;
-      }
-    }
-
-    if ($current_x == 8) {
-      switch ($current_y) {
-        case 2:
-        case 4:
-        case 6:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y + 1,
-            'direction' => 'W',
-          ];
-          break;
-        case 3:
-        case 5:
-        case 7:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y - 1,
-            'direction' => 'W',
-          ];
-          break;
-        case 1:
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y - 1,
-            'direction' => 'W',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y,
-            'direction' => 'S',
-          ];
-          break;
-      }
-    }
-
-    if ($current_y == 0) {
-      switch ($current_x) {
-        case 1:
-        case 3:
-        case 5:
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y,
-            'direction' => 'E',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          break;
-        case 2:
-        case 4:
-        case 6:
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y,
-            'direction' => 'W',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          break;
-        case 7:
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y,
-            'direction' => 'E',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y + 1,
-            'direction' => 'S',
-          ];
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y + 1,
-            'direction' => 'W',
-          ];
-          break;
-      }
-    }
-
-    if ($current_y == 8) {
-      switch ($current_x) {
-        case 2:
-        case 4:
-        case 6:
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y,
-            'direction' => 'E',
-          ];
-          $path[] = [
-            'x' => $current_x + 1,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          break;
-        case 3:
-        case 5:
-        case 7:
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y,
-            'direction' => 'W',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          break;
-        case 1:
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y,
-            'direction' => 'W',
-          ];
-          $path[] = [
-            'x' => $current_x - 1,
-            'y' => $current_y - 1,
-            'direction' => 'N',
-          ];
-          $path[] = [
-            'x' => $current_x,
-            'y' => $current_y - 1,
-            'direction' => 'E',
-          ];
-          break;
-      }
-    }
-
-    // Update current variables
-    $last_path = end($path);
-    $current_x = $last_path['x'];
-    $current_y = $last_path['y'];
-    $current_direction = $last_path['direction'];
-  }
-
-  return $path;
-}
-
-
-
-
-function getPossiblePlaces()
-{
-  $sql = "SELECT assam_x x,assam_y y,direction FROM assam LIMIT 1";
-  $assam = self::getObjectFromDB($sql);
-
-  $possiblePlaces = [];
-
-  if ($assam['x'] > 1) {
-    if ($assam['x'] > 2) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] - 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] - 2,
-        'y2' => $assam['y'],
-      ]);
-    }
-    if ($assam['y'] > 1) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] - 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] - 1,
-        'y2' => $assam['y'] - 1,
-      ]);
-    }
-    if ($assam['y'] < 7) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] - 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] - 1,
-        'y2' => $assam['y'] + 1,
-      ]);
-    }
-  }
-
-  if ($assam['x'] < 7) {
-    if ($assam['x'] < 6) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] + 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] + 2,
-        'y2' => $assam['y'],
-      ]);
-    }
-    if ($assam['y'] > 1) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] + 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] + 1,
-        'y2' => $assam['y'] - 1,
-      ]);
-    }
-    if ($assam['y'] < 7) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'] + 1,
-        'y1' => $assam['y'],
-        'x2' => $assam['x'] + 1,
-        'y2' => $assam['y'] + 1,
-      ]);
-    }
-  }
-
-  if ($assam['y'] > 1) {
-    if ($assam['y'] > 2) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] - 1,
-        'x2' => $assam['x'],
-        'y2' => $assam['y'] - 2,
-      ]);
-    }
-    if ($assam['x'] > 1) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] - 1,
-        'x2' => $assam['x'] - 1,
-        'y2' => $assam['y'] - 1,
-      ]);
-    }
-    if ($assam['x'] < 7) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] - 1,
-        'x2' => $assam['x'] + 1,
-        'y2' => $assam['y'] - 1,
-      ]);
-    }
-  }
-
-  if ($assam['y'] < 7) {
-    if ($assam['y'] < 6) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] + 1,
-        'x2' => $assam['x'],
-        'y2' => $assam['y'] + 2,
-      ]);
-    }
-    if ($assam['x'] > 1) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] + 1,
-        'x2' => $assam['x'] - 1,
-        'y2' => $assam['y'] + 1,
-      ]);
-    }
-    if ($assam['x'] < 7) {
-      array_push($possiblePlaces, [
-        'x1' => $assam['x'],
-        'y1' => $assam['y'] + 1,
-        'x2' => $assam['x'] + 1,
-        'y2' => $assam['y'] + 1,
-      ]);
-    }
-  }
-
-  return $possiblePlaces;
-}
-
-
-
-rotateAssam($dir){
-  // Rotate assam to right (clockwise)
-  $sql = "
-    UPDATE assam
-    SET direction = CASE
-      WHEN direction = 'S' THEN 'W'
-      WHEN direction = 'E' THEN 'S'
-      WHEN direction = 'N' THEN 'E'
-      WHEN direction = 'W' THEN 'N'
-    END
-    ";
-  self::DbQuery($sql);
-
-  // Get the new direction of Assam
-  $sql = "SELECT direction FROM assam LIMIT 1";
-  $direction = self::getUniqueValueFromDB($sql);
-
-  // Notify players
-  self::notifyAllPlayers(
-    "assamDirection",
-    clienttranslate('${player_name} rotates Assam right'),
-    [
-      "player_name" => self::getActivePlayerName(),
-      "newAssamDirection" => $direction,
-    ]
-  );
-
-}
-
-
-moveAssam($n){
-  // Get current position and direction of Assam
-  $sql = "SELECT assam_x x,assam_y y,direction FROM assam LIMIT 1";
-  $assam = self::getObjectFromDB($sql);
-
-  // Move Assam
-  $path = $this->generateAssamPath($assam, $roll);
-
-  // Update Assam position / direction
-  $last_path = end($path);
-  $sql =
-    "UPDATE assam SET assam_x = " .
-    $last_path['x'] .
-    ",assam_y = " .
-    $last_path['y'] .
-    ",direction = '" .
-    $last_path['direction'] .
-    "'";
-  self::DbQuery($sql);
-
-  // Notify players
-  self::notifyAllPlayers(
-    "diceRoll",
-    clienttranslate('${player_name} moves Assam ${roll} steps'),
-    [
-      "player_name" => $player_name,
-      "roll" => $roll,
-      "path" => $path,
-      "assam" => $last_path,
-    ]
-  );
-}
-
 
 payTaxes(){
   // Check for taxes

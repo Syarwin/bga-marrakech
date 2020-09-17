@@ -2,17 +2,24 @@
 
 class NotificationManager extends APP_GameClass
 {
-  public static function rollDice($n){
-    Marrakech::$instance->notifyAllPlayers("diceRoll", clienttranslate('${player_name} moves Assam ${roll} steps'), [
-        "player_name" => Marrakech::$instance->getActivePlayerName(),
-        "roll" => $n,
-      ]
-    );
+  public static function rollDice($face, $value){
+    Marrakech::$instance->notifyAllPlayers("rollDice", '', [
+      "face" => $face,
+    ]);
+
+    Marrakech::$instance->notifyAllPlayers("message", clienttranslate('${player_name} moves Assam ${roll} steps'), [
+      "player_name" => Marrakech::$instance->getActivePlayerName(),
+      "roll" => $value,
+    ]);
   }
 
 
+  public static function rotateAssam($target){
+    Marrakech::$instance->notifyAllPlayers("rotateAssam", '', [ "assam" => $target ]);
+  }
+
   public static function moveAssam($target){
-    Marrakech::$instance->notifyAllPlayers("assamMoved", '', [ "assam" => $target ]);
+    Marrakech::$instance->notifyAllPlayers("moveAssam", '', [ "assam" => $target ]);
   }
 
   public static function rotate($delta){

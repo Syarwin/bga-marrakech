@@ -58,13 +58,15 @@ $machinestates = [
     // Throw the die, move Assam and pay taxes
     ST_MOVE_ASSAM => [
       "name" => "moveAssam",
-      "description" => clienttranslate('Assam is moving'),
-      "type" => "game",
-      "action" => "stMoveAssam",
+      "description" => clienttranslate('${actplayer} must roll the dice to move Assam'),
+      "descriptionmyturn" => clienttranslate('${you} must roll the dice to move Assam'),
+      "type" => "activeplayer",
+      "possibleactions" => [ "rollDice" ],
       "transitions" => [
-        "placeCarpet" => 12,
+        "placeCarpet" => ST_PLACE_CARPET,
         "nextPlayer" => ST_NEXT_PLAYER,
-        "zombiePass" => ST_NEXT_PLAYER
+        "zombiePass" => ST_NEXT_PLAYER,
+"roll" => ST_MOVE_ASSAM,
       ]
     ],
 
