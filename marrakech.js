@@ -64,19 +64,12 @@ setup: function (gamedatas) {
 
   // Click listener for dice
   dojo.connect($("dice"), 'click', () => this.rollDice());
-/*
-  TODO
-            var carpets_on_board = gamedatas.carpets_on_board;
-            this.addCarpetsOnBoard(carpets_on_board);
 
-            // Add events on square_action
-            dojo.query(".square_action").connect("click", this, this.onClickCell);
+  // Click listener on square_action
+  dojo.query(".square").connect("click", this, this.onClickCell);
 
-            // Setup game notifications to handle (see "setupNotifications" method below)
-            this.setupNotifications();
-
-        },
-*/
+  // Add carpets
+  gamedatas.carpets.forEach(carpet => this.addCarpetOnBoard(carpet, false));
 
   // Setup game notifications
   this.setupNotifications();
@@ -142,6 +135,25 @@ setAssam: function(assam){
 
 
 
+addCarpetOnBoard: function(carpet, animation){
+  dojo.place( this.format_block( 'jstpl_carpet', carpet) , 'board');
+  dojo.style('carpet_' + carpet.id, {
+    zIndex: 10 + parseInt(carpet.id)
+  });
+
+  let carpetId = 'carpet_' + carpet.id;
+  let squareId = 'square_' + carpet.x + '_' + carpet.y;
+  let offsetX = carpet.orientation == 'h'? 40 : 0;
+  let offsetY = carpet.orientation == 'v'? 40 : 0;
+
+  if(animation){
+    this.placeOnObject(carpetId, 'overall_player_board_'+ carpet.pId );
+    this.slideToObjectPos(carpetId, squareId, 0, 0, 1000).play();
+  } else {
+    this.placeOnObjectPos(carpetId, squareId, offsetX, offsetY);
+  }
+},
+
 
 
 
@@ -200,6 +212,7 @@ takeAction: function (action, data, callback) {
 clearPossible: function(){
   dojo.query(".next_direction").style('display', 'none');
   dojo.forEach( this.nextDirectionConnections, dojo.disconnect);
+  dojo.query(".square").removeClass("selectable selected");
 
 },
 
@@ -231,7 +244,7 @@ onEnteringStateRotateAssam: function() {
     dojo.style(elemId, 'display', 'block');
     dojo.place(elemId, 'square_' + x + '_' + y );
     this.nextDirectionConnections.push(
-      dojo.connect($(elemId), 'click', () => this.rotateAssam(delta) )
+      dojo.connect($(elemId), 'click', (evt) => { evt.stopPropagation(); this.rotateAssam(delta); })
     );
   }
 },
@@ -288,6 +301,79 @@ notif_moveAssam: function(n){
 },
 
 
+
+////////////////////////
+////////////////////////
+///////		Carpet  //////
+////////////////////////
+////////////////////////
+onEnteringStatePlaceCarpet: function(args){
+  this._possiblePlaces = args.places;
+  this._selectedFirstSquare = null;
+  this._selectedSecondSquare = null;
+  dojo.query(".square").removeClass('selectable selected');
+  this.removeActionButtons();
+  this.makeSquareSelectable();
+},
+
+makeSquareSelectable: function(){
+  this._possiblePlaces.forEach(place => {
+    if(this._selectedFirstSquare == null)
+      dojo.addClass('square_' + place.x1 + '_' + place.y1, "selectable");
+
+    else if(this._selectedFirstSquare.x == place.x1 && this._selectedFirstSquare.y == place.y1)
+      dojo.addClass('square_' + place.x2 + '_' + place.y2, "selectable");
+  });
+},
+
+
+
+onClickCell: function(evt) {
+  if(!this.checkAction('placeCarpet')
+  || !dojo.hasClass(evt.target, 'selectable')
+  || dojo.hasClass(evt.target, 'selected'))
+    return;
+
+  this.removeActionButtons();
+  this.addActionButton('btnCancelCarpet', _('Cancel'), () => this.onEnteringStatePlaceCarpet({ places : this._possiblePlaces }), null, false, 'gray');
+
+  var x = dojo.attr(evt.target, 'data-x');
+  var y = dojo.attr(evt.target, 'data-y');
+
+  if(this._selectedFirstSquare == null){
+    dojo.query(".square").removeClass('selectable');
+    dojo.addClass(evt.target, 'selected');
+    this._selectedFirstSquare = { x : x, y : y};
+    this.makeSquareSelectable();
+  } else {
+    dojo.query(".square").removeClass('selectable');
+    dojo.addClass(evt.target, 'selected');
+    this._selectedSecondSquare = { x : x, y : y};
+    this.addActionButton('btnValidateCarpet', _('Validate'), 'onValidateCarpet');
+  }
+},
+
+
+
+onValidateCarpet: function() {
+  if(!this.checkAction( 'placeCarpet')) return;
+
+  this.takeAction('placeCarpet',{
+    x1: this._selectedFirstSquare.x,
+    y1: this._selectedFirstSquare.y,
+    x2: this._selectedSecondSquare.x,
+    y2: this._selectedSecondSquare.y,
+  });
+},
+
+
+
+notif_placeCarpet: function(n){
+  debug("Notif: place carpet", n);
+  this.addCarpetOnBoard(n.args, true);
+},
+
+
 ///////////////////////////////////////////////////
 //////	 Reaction to cometD notifications	 ///////
 ///////////////////////////////////////////////////
@@ -302,6 +388,7 @@ setupNotifications: function () {
 		['rotateAssam', 500],
     ['moveAssam', 500],
     ['rollDice', 2000],
+    ['placeCarpet', 1500],
 	];
 
 	notifs.forEach(notif => {
@@ -328,285 +415,16 @@ setupNotifications: function () {
         //
         onUpdateActionButtons: function( stateName, args )
         {
-            console.log( 'onUpdateActionButtons: '+stateName );
 
-            if( this.isCurrentPlayerActive() )
-            {
-                switch( stateName )
-                {
-                  /*case 'assamDirection':
-                    this.addActionButton( 'button_direction_right', _('Turn right'), 'onDirectionRight' );
-                    this.addActionButton( 'button_direction_left', _('Turn left'), 'onDirectionLeft' );
-                    this.addActionButton( 'button_skip_direction', _('Move forward'), 'onSkipDirection' );
-                    break;*/
-                  case 'placeCarpet':
-                    this.addActionButton( 'button_validate', _('Validate'), 'onValidateCarpet' );
-                    this.addActionButton( 'button_cancel', _('Cancel'), 'onCancelCarpet' );
-                    break;
-/*
-                 Example:
-
-                 case 'myGameState':
-
-                    // Add 3 action buttons in the action status bar:
-
-                    this.addActionButton( 'button_1_id', _('Button 1 label'), 'onMyMethodToCall1' );
-                    this.addActionButton( 'button_2_id', _('Button 2 label'), 'onMyMethodToCall2' );
-                    this.addActionButton( 'button_3_id', _('Button 3 label'), 'onMyMethodToCall3' );
-                    break;
-*/
-                }
-            }
         },
 
         ///////////////////////////////////////////////////
         //// Utility methods
 
 
-        addCarpetsOnBoard: function( carpets_on_board )
-        {
-          for( var row in carpets_on_board )
-          {
-            var current_carpet = carpets_on_board[row];
-            dojo.place( this.format_block( 'jstpl_carpet', {
-                carpet_id: current_carpet.turn,
-                carpet_type: current_carpet.carpet_type,
-                carpet_orientation: current_carpet.carpet_orientation
-            } ) , 'square_' + current_carpet.x + '_' + current_carpet.y);
-            dojo.query('#carpet_' + current_carpet.turn).style({
-              zIndex: 10 + parseInt(current_carpet.turn)
-            });
-          }
-        },
 
 
 
-
-        setCarpetActions: function()
-        {
-          // Initialize carpet actions
-          this.carpetPlaced = {        removeAssamDirections: function() {
-        },
-
-            x1: null,
-            y1: null,
-            x2: null,
-            y2: null
-          };
-
-          dojo.query(".square_action").removeClass('selected');
-          dojo.query(".square_action").style({
-            display: 'none',
-            backgroundColor: 'transparent'
-          });
-
-          if ( this.assamPosition.x > 1 )
-          {
-            dojo.query('#square_action_' + (parseInt(this.assamPosition.x)-1) + '_' + parseInt(this.assamPosition.y) ).style({
-              display: 'block',
-              backgroundColor: 'rgba(100,100,255,0.3)'
-            });
-          }
-          if ( this.assamPosition.x < 7 )
-          {
-            dojo.query('#square_action_' + (parseInt(this.assamPosition.x)+1) + '_' + parseInt(this.assamPosition.y) ).style({
-              display: 'block',
-              backgroundColor: 'rgba(100,100,255,0.3)'
-            });
-          }
-          if ( this.assamPosition.y > 1 )
-          {
-            dojo.query('#square_action_' + parseInt(this.assamPosition.x) + '_' + (parseInt(this.assamPosition.y)-1) ).style({
-              display: 'block',
-              backgroundColor: 'rgba(100,100,255,0.3)'
-            });
-          }
-          if ( this.assamPosition.y < 7 )
-          {
-            dojo.query('#square_action_' + parseInt(this.assamPosition.x) + '_' + (parseInt(this.assamPosition.y)+1) ).style({
-              display: 'block',
-              backgroundColor: 'rgba(100,100,255,0.3)'
-            });
-          }
-        },
-
-
-        ///////////////////////////////////////////////////
-        //// Player's action
-
-        onValidateCarpet: function ( evt )
-        {
-          dojo.stopEvent( evt );
-
-          if( ! this.checkAction( 'placeCarpet' ) )
-          { return; }
-
-          if ( this.carpetPlaced.x1 == null
-            || this.carpetPlaced.y1 == null
-            || this.carpetPlaced.x2 == null
-            || this.carpetPlaced.y2 == null)
-          {
-            this.showMessage( _('Please select 2 cells to place your carpet'), 'error' );
-            return;
-          }
-
-          var x1 = this.carpetPlaced.x1;
-          var y1 = this.carpetPlaced.y1;
-          var x2 = this.carpetPlaced.x2;
-          var y2 = this.carpetPlaced.y2;
-
-          this.ajaxcall( "/marrakech/marrakech/placeCarpet.html",
-            {
-              x1: x1,
-              y1: y1,
-              x2: x2,
-              y2: y2,
-              lock: true
-            },
-            this,
-            function( result ) {
-              // Remove selected cells
-              dojo.query(".square_action").removeClass('selected');
-              dojo.query(".square_action").style({
-                display: 'none',
-                backgroundColor: 'transparent'
-              });
-            },
-            function( is_error ) {
-              if (is_error) {
-                this.setCarpetActions();
-              }
-            }
-          );
-        },
-
-        onCancelCarpet: function ( evt )
-        {
-          dojo.stopEvent( evt );
-
-          this.setCarpetActions();
-        },
-
-        onClickCell: function( evt )
-        {
-          if( ! this.checkAction( 'placeCarpet' ) )
-          { return; }
-
-          // Action id is on the form 'square_action_x_y'
-          var action_id = evt.target.id;
-          var action_infos = action_id.split('_');
-          var x = action_infos[2];
-          var y = action_infos[3];
-
-          if (dojo.hasClass(action_id, 'selected'))
-          {
-            return;
-          }
-
-          if (this.carpetPlaced.x1 == null && this.carpetPlaced.y1 == null)
-          {
-            this.carpetPlaced.x1 = x;
-            this.carpetPlaced.y1 = y;
-
-            dojo.query('#' + action_id).style({
-              backgroundColor: 'rgba(0,255,0,0.4)'
-            })
-            dojo.addClass(action_id, 'selected');
-            dojo.query(".square_action:not(.selected)").style({
-              display: 'none',
-              backgroundColor: 'transparent'
-            });
-
-            // Set square_action for 2d carpet cell
-            if ( x > 1 && ( (parseInt(x)-1) != this.assamPosition.x || parseInt(y) != this.assamPosition.y ) )
-            {
-              dojo.query('#square_action_' + (parseInt(x)-1) + '_' + parseInt(y) ).style({
-                display: 'block',
-                backgroundColor: 'rgba(100,100,255,0.3)'
-              });
-            }
-            if ( x < 7 && ( (parseInt(x)+1) != this.assamPosition.x || parseInt(y) != this.assamPosition.y ) )
-            {
-              dojo.query('#square_action_' + (parseInt(x)+1) + '_' + parseInt(y) ).style({
-                display: 'block',
-                backgroundColor: 'rgba(100,100,255,0.3)'
-              });
-            }
-            if ( y > 1 && ( parseInt(x) != this.assamPosition.x || (parseInt(y)-1) != this.assamPosition.y ) )
-            {
-              dojo.query('#square_action_' + parseInt(x) + '_' + (parseInt(y)-1) ).style({
-                display: 'block',
-                backgroundColor: 'rgba(100,100,255,0.3)'
-              });
-            }
-            if ( y < 7 && ( parseInt(x) != this.assamPosition.x || (parseInt(y)+1) != this.assamPosition.y ) )
-            {
-              dojo.query('#square_action_' + parseInt(x) + '_' + (parseInt(y)+1) ).style({
-                display: 'block',
-                backgroundColor: 'rgba(100,100,255,0.3)'
-              });
-            }
-          }
-          else if (this.carpetPlaced.x2 == null && this.carpetPlaced.y2 == null)
-          {
-            this.carpetPlaced.x2 = x;
-            this.carpetPlaced.y2 = y;
-
-            dojo.query('#' + action_id).style({
-              backgroundColor: 'rgba(0,255,0,0.4)'
-            })
-            dojo.addClass(action_id, 'selected');
-            dojo.query(".square_action:not(.selected)").style({
-              display: 'none',
-              backgroundColor: 'transparent'
-            });
-          }
-        },
-
-        /*
-
-            Here, you are defining methods to handle player's action (ex: results of mouse click on
-            game objects).
-
-            Most of the time, these methods:
-            _ check the action is possible at this game state.
-            _ make a call to the game server
-
-        */
-
-        /* Example:
-
-        onMyMethodToCall1: function( evt )
-        {
-            console.log( 'onMyMethodToCall1' );
-
-            // Preventing default browser reaction
-            dojo.stopEvent( evt );
-
-            // Check that this action is possible (see "possibleactions" in states.inc.php)
-            if( ! this.checkAction( 'myAction' ) )
-            {   return; }
-
-            this.ajaxcall( "/marrakech/marrakech/myAction.html", {
-                                                                    lock: true,
-                                                                    myArgument1: arg1,
-                                                                    myArgument2: arg2,
-                                                                    ...
-                                                                 },
-                         this, function( result ) {
-
-                            // What to do after the server call if it succeeded
-                            // (most of the time: nothing)
-
-                         }, function( is_error) {
-
-                            // What to do after the server call in anyway (success or failure)
-                            // (most of the time: nothing)
-
-                         } );
-        },
-
-        */
 
 
         ///////////////////////////////////////////////////
@@ -687,17 +505,6 @@ setupNotifications: function () {
               } ) , current_next_carpet );
             }
           }
-
-          dojo.place( this.format_block( 'jstpl_carpet', {
-              carpet_id: notif.args.carpet_id,
-              carpet_type: notif.args.carpet_type,
-              carpet_orientation: notif.args.carpet_orientation
-          } ) , 'board' );
-          dojo.query('#carpet_' + notif.args.carpet_id).style({
-            zIndex: 10 + parseInt(notif.args.carpet_id)
-          });
-          this.placeOnObject( 'carpet_' + notif.args.carpet_id, 'overall_player_board_'+ notif.args.playerId );
-          this.slideToObjectPos( 'carpet_' + notif.args.carpet_id, 'square_' + notif.args.x + '_' + notif.args.y, 0, 0 ).play();
 
           // Update carpet counter for active player
           dojo.byId('carpet_' + notif.args.carpet_type + '_count').innerHTML = notif.args.carpets_left;

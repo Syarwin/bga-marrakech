@@ -77,7 +77,7 @@ class Marrakech extends Table
 		return [
 			'bplayers' => MarrakechPlayerManager::getUiData(),
 			'assam' => MarrakechAssam::get(),
-			'board' => MarrakechBoard::getUiData(),
+			'carpets' => MarrakechBoard::getUiData(),
 		];
 	}
 
@@ -87,6 +87,9 @@ class Marrakech extends Table
    */
 	function getGameProgression()
 	{
+		return 10;
+
+		// TODO
 		// Get total of carpets depending of the number of players and eliminated players
 		$carpets_total = 0;
 
@@ -139,6 +142,8 @@ class Marrakech extends Table
 
 	function isEndOfGame()
 	{
+		return false;
+
 		// TODO
 		$sql =
 			"SELECT SUM(carpet_1) + SUM(carpet_2) + SUM(carpet_3) + SUM(carpet_4) as TOTAL  FROM player_carpets";
@@ -189,12 +194,6 @@ class Marrakech extends Table
 	/////////////////////////////////////
 	function rollDice()
 	{
-/*
-		$player_id = self::getActivePlayerId();
-		$player_name = self::getActivePlayerName();
-		$player_eliminated = false;
-*/
-
 		// Roll die and move Assam
 		$face = bga_rand(1, 6);
 		$roll = $this->marrakechDice[$face];
@@ -202,11 +201,70 @@ class Marrakech extends Table
 		MarrakechAssam::move($roll);
 //		MarrakechBoard::payTaxes();
 
-		$this->gamestate->nextState("roll");
-//		$this->gamestate->nextState("nextPlayer");
+		$this->gamestate->nextState("placeCarpet");
 	}
 
 
+
+	/////////////////////////////////////
+	//////////// Place carpet  //////////
+	/////////////////////////////////////
+	function argPlaceCarpets()
+	{
+		return [
+			'places' => MarrakechBoard::getPossiblePlaces()
+		];
+	}
+
+	function placeCarpet($x1, $y1, $x2, $y2)
+	{
+		self::checkAction('placeCarpet');
+
+		// Security : check that the coordinates are not falsified
+	 	$places = MarrakechBoard::getPossiblePlaces();
+		Utils::filter($places, function($place) use ($x1,$y1,$x2,$y2){
+			return $x1 == $place['x1'] && $y1 == $place['y1']
+					&& $x2 == $place['x2'] && $y2 == $place['y2'];
+		});
+		if (empty($places)){
+			throw new BgaUserException( self::_("You can not place a carpet here") );
+		}
+
+		// Compute position and direction of carpet
+		$x = min($x1, $x2);
+		$y = min($y1, $y2);
+		$orientation = $x1 == $x2? 'v' : 'h';
+
+		// Place carpet
+		$pId = self::getActivePlayerId();
+		MarrakechPlayerManager::placeCarpet($pId, $x, $y, $orientation);
+
+		// Update score and UI
+		MarrakechPlayerManager::updateScores();
+		MarrakechPlayerManager::updateUi();
+/*
+TODO
+					$carpets_left = self::getUniqueValueFromDB( "SELECT carpet_$carpet_type FROM player_carpets WHERE player_id='$player_id'" );
+
+					// Update stats
+					$visibleCarpetsOnBoard = $this->getVisibleCarpetsOnBoard();
+					$current_carpet_zone = $this->getTaxesZone( $visibleCarpetsOnBoard, $player_id, $carpet_type, $x1, $y1 );
+					$current_carpet_zone_count = count( $current_carpet_zone );
+
+					$table_largest_carpet_zone = self::getStat( 'table_largest_carpet_zone' );
+					$player_largest_carpet_zone = self::getStat( 'player_largest_carpet_zone', $player_id );
+
+					if( $table_largest_carpet_zone < $current_carpet_zone_count ) {
+						self::setStat( $current_carpet_zone_count, 'table_largest_carpet_zone' );
+					}
+					if( $player_largest_carpet_zone < $current_carpet_zone_count ) {
+						self::setStat( $current_carpet_zone_count, 'player_largest_carpet_zone', $player_id );
+					}
+*/
+
+		$newState = (self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN && !$this->isEndOfGame())? "rotateAssam" : "nextPlayer";
+		$this->gamestate->nextState($newState);
+	}
 
 
 	////////////////////////////////////

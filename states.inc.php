@@ -66,7 +66,6 @@ $machinestates = [
         "placeCarpet" => ST_PLACE_CARPET,
         "nextPlayer" => ST_NEXT_PLAYER,
         "zombiePass" => ST_NEXT_PLAYER,
-"roll" => ST_MOVE_ASSAM,
       ]
     ],
 
@@ -76,6 +75,7 @@ $machinestates = [
       "description" => clienttranslate('${actplayer} must place a rug adjacent to Assam'),
       "descriptionmyturn" => clienttranslate('${you} must place a rug adjacent to Assam'),
       "type" => "activeplayer",
+      'args' => 'argPlaceCarpets',
       "possibleactions" => ["placeCarpet"],
       "transitions" => [
         "nextPlayer" => ST_NEXT_PLAYER,

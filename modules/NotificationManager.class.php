@@ -29,6 +29,23 @@ class NotificationManager extends APP_GameClass
 
     Marrakech::$instance->notifyAllPlayers("message", $msg, [ "player_name" => Marrakech::$instance->getActivePlayerName() ]);
   }
+
+
+  public static function placeCarpet($cId, $x, $y, $orientation, $type){
+    Marrakech::$instance->notifyAllPlayers("placeCarpet", '${player_name} places a rug', [
+      "player_name" => Marrakech::$instance->getActivePlayerName(),
+      "pId" => Marrakech::$instance->getActivePlayerId(),
+      'id' => $cId,
+      'x' => $x,
+      'y' => $y,
+      'orientation' => $orientation,
+      'type' => $type,
+    ]);
+  }
+
+  public static function updatePlayersInfos($players){
+    Marrakech::$instance->notifyAllPlayers("updatePlayersInfo", '', ['players' => $players ]);
+  }
 }
 
 ?>

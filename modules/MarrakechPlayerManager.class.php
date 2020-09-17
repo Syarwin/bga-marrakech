@@ -12,7 +12,7 @@ class MarrakechPlayerManager extends APP_GameClass
 		self::DbQuery('DELETE FROM player');
 		$gameInfos = Marrakech::$instance->getGameinfos();
     $colors = $gameInfos['player_colors'];
-    $sql = 'INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score, player_score_aux, player_money) VALUES ';
+    $sql = 'INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score, player_score_aux, money) VALUES ';
 
 		$values = [];
 		foreach ($players as $pId => $player) {
@@ -31,96 +31,96 @@ class MarrakechPlayerManager extends APP_GameClass
     self::distributeCarpets($players);
 	}
 
-
-
-
   public static function distributeCarpets($players){
-      $sql = "INSERT INTO player_carpets (player_id,carpet_type,carpet_1,carpet_2,carpet_3,carpet_4,next_carpet) VALUES ";
-      $values = [];
-      switch (count($players)) {
-        case 4:
-          // 12 carpets each
-          foreach (array_keys($players) as $index => $player_id) {
-            $values[] =
-              "(" .
-              $player_id .
-              "," .
-              ($index + 1) .
-              "," .
-              ($index == 0 ? '12' : '0') .
-              "," .
-              ($index == 1 ? '12' : '0') .
-              "," .
-              ($index == 2 ? '12' : '0') .
-              "," .
-              ($index == 3 ? '12' : '0') .
-              "," .
-              "0)";
-          }
-          break;
-        case 3:
-          // 15 carpets each
-          foreach (array_keys($players) as $index => $player_id) {
-            $values[] =
-              "(" .
-              $player_id .
-              "," .
-              ($index + 1) .
-              "," .
-              ($index == 0 ? '15' : '0') .
-              "," .
-              ($index == 1 ? '15' : '0') .
-              "," .
-              ($index == 2 ? '15' : '0') .
-              "," .
-              "0,0)";
-          }
-          break;
-        case 2:
-          // 24 carpets each (12 by color)
-          foreach (array_keys($players) as $index => $player_id) {
-            $values[] =
-              "(" .
-              $player_id .
-              "," .
-              ($index * 2 + 1) .
-              "," .
-              ($index == 0 ? '12' : '0') .
-              "," .
-              ($index == 0 ? '12' : '0') .
-              "," .
-              ($index == 1 ? '12' : '0') .
-              "," .
-              ($index == 1 ? '12' : '0') .
-              "," .
-              ($index == 0 ? random_int(1, 2) : random_int(3, 4)) .
-              ")";
-          }
-          break;
+    foreach(array_keys($players) as $i => $pId) {
+      $carpets = [0,0,0,0];
+      $next = 0;
+      $type = $i + 1;
+      if(count($players) != 2){
+        $carpets[$i] = count($players) == 4? 12 : 15;
+      } else {
+        $type = 2*$i + 1;
+        $carpets[2*$i]     = 12;
+        $carpets[2*$i + 1] = 12;
+        $next = $type + random_int(0, 1); // Carpet indexing start at 1
       }
-      $sql .= implode($values, ",");
-      self::DbQuery($sql);
-    }
 
+      self::DbQuery("UPDATE player SET carpet_type = $type, next_carpet = $next,
+        carpet_1 = {$carpets[0]}, carpet_2 = {$carpets[1]}, carpet_3 = {$carpets[2]}, carpet_4 = {$carpets[3]} WHERE player_id = $pId");
+    }
+  }
 
 
   public static function getUiData(){
-    // Get information about players
-    // Note: you can retrieve some extra field you added for "player" table in "dbmodel.sql" if you need it.
-    $sql =
-      "SELECT " .
-      "player.player_id id, " .
-      "player.player_eliminated player_eliminated, " .
-      "player.player_score score, " .
-      "player.player_money money, " .
-      "player_carpets.carpet_type carpet_type, " .
-      "player_carpets.carpet_1 carpet_1, " .
-      "player_carpets.carpet_2 carpet_2, " .
-      "player_carpets.carpet_3 carpet_3, " .
-      "player_carpets.carpet_4 carpet_4, " .
-      "player_carpets.next_carpet next_carpet " .
-      "FROM player " .
-      "INNER JOIN player_carpets ON player_carpets.player_id = player.player_id ";
-    return self::getObjectListFromDb($sql);
+    return self::getObjectListFromDb("SELECT player_id id, player_eliminated eliminated, player_score score,
+      money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player");
+  }
+
+
+
+  public function placeCarpet($pId, $x, $y, $orientation){
+    $nPlayers = count(self::getUiData());
+
+    $carpets = self::getObjectFromDB("SELECT * FROM player WHERE player_id = $pId");
+    $type = $nPlayers == 2? $carpets['next_carpet'] : $carpets['carpet_type'];
+
+    // Add carpet to board
+    self::DbQuery("INSERT INTO carpets (x, y, type, orientation, player_id) VALUES ($x, $y, $type,'$orientation',$pId)");
+    $cId = self::getUniqueValueFromDB("SELECT max(id) last_id FROM carpets");
+
+    // Remove carpet from player stock
+    self::DbQuery("UPDATE player SET carpet_$type = carpet_$type - 1 WHERE player_id = $pId");
+
+    // Notify players
+    NotificationManager::placeCarpet($cId, $x, $y, $orientation, $type);
+
+
+    // Update next_carpet in db for next move for 2 players
+    if($nPlayers == 2){
+      $carpets = self::getObjectFromDB("SELECT * FROM player WHERE player_id = $pId");
+      $playerType = (int) $carpets['carpet_type'];
+      $firstType  = (int) $carpets['carpet_' . $playerType];
+      $secondType = (int) $carpets['carpet_' . ($playerType + 1)];
+
+      $nextCarpet = 0;
+      if($firstType != 0 && $secondType != 0){
+        $nextCarpet = bga_rand($playerType, $playerType + 1);
+      } else {
+        $nextCarpet = $playerType + ($firstType == 0? 1 : 0);
+      }
+
+      // Update next_carpet in db
+      self::DbQuery( "UPDATE player SET next_carpet = $nextCarpet WHERE player_id = $pId");
+    }
+  }
+
+
+
+  function updateScores(){
+    // Set score for all players
+    $players = self::getCollectionFromDB("SELECT player_id id, money FROM player");
+    foreach ($players as &$player)
+      $player['carpet_score'] = 0;
+
+    $board = MarrakechBoard::getBoard();
+    for($x = 1; $x <= 7; $x++) {
+      for($y = 1; $y <= 7; $y++) {
+        $carpet = $board[$x][$y];
+        if(!is_null($carpet))
+          $players[$carpet['pId']]['carpet_score']++;
+      }
+    }
+
+    foreach ($players as $pId => $player) {
+      $score_aux = (int) $player['money'];
+      $score = $score_aux + $player['carpet_score'];
+
+      // Update scores for current player
+      self::DbQuery( "UPDATE player SET player_score = $score, player_score_aux = $score_aux WHERE player_id = $pId");
+    }
+  }
+
+  function updateUi(){
+    NotificationManager::updatePlayersInfos(self::getUiData());
   }
 }

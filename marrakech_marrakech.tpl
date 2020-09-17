@@ -3,7 +3,7 @@
 
   <div id="board">
     <!-- BEGIN square -->
-      <div id="square_{X}_{Y}" class="square"></div>
+      <div id="square_{X}_{Y}" data-x="{X}" data-y="{Y}" class="square"></div>
     <!-- END square -->
 
     <!-- BEGIN square_action -->
@@ -34,7 +34,7 @@
 // Javascript HTML templates
 
 var jstpl_assam = '<div id="assam" data-dir="${dir}"></div>';
-var jstpl_carpet = '<div id="carpet_${carpet_id}" class="carpet carpet_${carpet_orientation} carpet_${carpet_type}_${carpet_orientation}"></div>';
+var jstpl_carpet = '<div id="carpet_${id}" class="carpet carpet_${orientation} carpet_${type}_${orientation}"></div>';
 
 var jstpl_carpet_info = `
 <div class="player_info" id="carpet_player_info_\${carpet_type}">

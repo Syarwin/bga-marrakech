@@ -9,18 +9,13 @@
 
 -- dbmodel.sql
 
-ALTER TABLE `player` ADD `player_money` INT UNSIGNED NOT NULL DEFAULT '0';
-
-CREATE TABLE IF NOT EXISTS `player_carpets` (
-  `player_id` int(10) unsigned NOT NULL,
-  `carpet_type` smallint(5) unsigned NOT NULL,
-  `carpet_1` smallint(5) unsigned NOT NULL DEFAULT 0,
-  `carpet_2` smallint(5) unsigned NOT NULL DEFAULT 0,
-  `carpet_3` smallint(5) unsigned NOT NULL DEFAULT 0,
-  `carpet_4` smallint(5) unsigned NOT NULL DEFAULT 0,
-  `next_carpet` smallint(5) unsigned NOT NULL DEFAULT 0,
-  PRIMARY KEY (`player_id`)
-) ENGINE=InnoDB;
+ALTER TABLE `player` ADD `money` INT UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `carpet_type` SMALLINT(5) UNSIGNED;
+ALTER TABLE `player` ADD `carpet_1` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `carpet_2` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `carpet_3` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `carpet_4` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0';
+ALTER TABLE `player` ADD `next_carpet` SMALLINT(5) UNSIGNED NOT NULL DEFAULT '0';
 
 CREATE TABLE IF NOT EXISTS `carpets` (
   `id` int NOT NULL AUTO_INCREMENT,

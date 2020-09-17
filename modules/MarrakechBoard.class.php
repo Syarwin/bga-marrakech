@@ -3,7 +3,7 @@
 class MarrakechBoard extends APP_GameClass
 {
   public static function getUiData(){
-    return [];
+    return self::getObjectListFromDb("SELECT * FROM carpets ORDER BY id ASC");
   }
 
 
@@ -21,7 +21,7 @@ class MarrakechBoard extends APP_GameClass
       }
     }
 
-    $sql = "SELECT * FROM carpet ORDER BY id ASC";
+    $sql = "SELECT * FROM carpets ORDER BY id ASC";
     foreach (self::getObjectListFromDb($sql) as $carpet){
       $data = [
         'id' => $carpet['id'],
@@ -106,11 +106,11 @@ class MarrakechBoard extends APP_GameClass
     $places = [];
     for($i = 0; $i < 4; $i++){
       $pos1 = self::moveInDir($assam, $i);
-      if(!self::isPositionValidForCarpet($pos1, $assam)) continue;
+      if(!self::isPositionValid($pos1, $assam)) continue;
 
       for($j = 0; $j < 4; $j++){
         $pos2 = self::moveInDir($pos1, $j);
-        if(!self::isPositionValidForCarpet($pos2, $assam)) continue;
+        if(!self::isPositionValid($pos2, $assam)) continue;
 
         array_push($places, [
           'x1' => $pos1['x'], 'y1' => $pos1['y'],
@@ -120,10 +120,10 @@ class MarrakechBoard extends APP_GameClass
     }
 
     // Keep only valid carpet places : cannot entirely cover opponent in one go
-		$board = $this->getBoard();
+		$board = self::getBoard();
     $pId = Marrakech::$instance->getActivePlayerId();
     Utils::filter($places, function($s) use ($board, $pId){
-      return is_null($board[$s['x1']][$s['y1']]) || is_null($board[$s['x2']][$s['y2']]) // Either one of the two spot is empty
+      return is_null($board[$s['x1']][$s['y1']]) || is_null($board[$s['x2']][$s['y2']]) // Either one of the two spot is empty
         || $board[$s['x1']][$s['y1']]['id'] != $board[$s['x2']][$s['y2']]['id'] // Either the rug are not the same on the two spot
         || $board[$s['x1']][$s['y1']]['pId'] == $pId; // Either the rub belongs to me (eventhough not very useful move...)
     });
