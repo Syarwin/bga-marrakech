@@ -51,7 +51,8 @@ $machinestates = [
       "transitions" => [
         "moveAssam" => ST_MOVE_ASSAM,
         "nextPlayer" => ST_NEXT_PLAYER,
-        "zombiePass" => ST_ELIMINATE_PLAYER
+        "zombiePass" => ST_ELIMINATE_PLAYER,
+        'eliminate' => ST_ELIMINATE_PLAYER,
       ]
     ],
 
@@ -81,7 +82,8 @@ $machinestates = [
       "transitions" => [
         "nextPlayer" => ST_NEXT_PLAYER,
         "rotateAssam" => ST_ROTATE_ASSAM,
-        "zombiePass" => ST_ELIMINATE_PLAYER
+        "zombiePass" => ST_ELIMINATE_PLAYER,
+        'eliminate' => ST_ELIMINATE_PLAYER,
       ]
     ],
 
@@ -105,7 +107,7 @@ $machinestates = [
       'type' => 'game',
       'action' => 'stEliminatePlayer',
       'transitions' => [
-        'play' => ST_START_OF_TURN,
+        'startTurn' => ST_START_OF_TURN,
         'endgame' => ST_GAME_END,
       ],
     ],

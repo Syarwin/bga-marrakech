@@ -6,9 +6,18 @@ class StatManager extends APP_GameClass
     Marrakech::$instance->initStat($type, $name, $value);
   }
 
-  protected static function inc($name, $player = null){
-    Marrakech::$instance->incStat(1, $name, $player);
+  protected static function inc($name, $player = null, $value = 1){
+    Marrakech::$instance->incStat($value, $name, $player);
   }
+
+  protected static function get($name, $player = null){
+    Marrakech::$instance->getStat($name, $player);
+  }
+
+  protected static function set($value, $name, $player = null){
+    Marrakech::$instance->setStat($value, $name, $player);
+  }
+
 
   public static function setupNewGame(){
     self::init('table', 'table_turns_number');
@@ -28,51 +37,31 @@ class StatManager extends APP_GameClass
   }
 
 
-  /* PayTax
-  // Update stats
-  self::incStat($taxes_cost, 'player_money_paid', $player_id);
-  self::incStat($taxes_cost, 'player_money_earned', $taxes_player_id);
+  public static function payTaxes($player, $taxer, $cost){
+    self::inc('player_money_paid', $player['id'], $cost);
+    self::inc('player_money_earned', $taxer['id'], $cost);
 
-  $table_highest_taxes_collected = self::getStat(
-    'table_highest_taxes_collected'
-  );
-  $player_highest_taxes_collected = self::getStat(
-    'player_highest_taxes_collected',
-    $taxes_player_id
-  );
+    $tableHighestPaid = self::get('table_highest_taxes_collected');
+    if ($tableHighestPaid < $cost)
+      self::set($cost, 'table_highest_taxes_collected');
 
-  if ($table_highest_taxes_collected < $taxes_cost) {
-    self::setStat($taxes_cost, 'table_highest_taxes_collected');
+    $taxerHighestPaid = self::get('player_highest_taxes_collected', $taxer['id']);
+    if ($taxerHighestPaid < $cost)
+      self::set($cost, 'player_highest_taxes_collected', $taxer['id']);
   }
-  if ($player_highest_taxes_collected < $taxes_cost) {
-    self::setStat(
-      $taxes_cost,
-      'player_highest_taxes_collected',
-      $taxes_player_id
-    );
+
+  public static function placeCarpet($pId, $type, $pos){
+    $currentZone = MarrakechBoard::getTaxesZone($pId, $type, $pos);
+    $size = count($currentZone);
+
+    $tableLargestZone = self::get('table_largest_carpet_zone');
+    if ($tableLargestZone < $size )
+      self::set($size, 'table_largest_carpet_zone');
+
+    $playerLargestZone = self::get('player_largest_carpet_zone', $pId);
+    if ($playerLargestZone < $size)
+      self::set($size, 'player_largest_carpet_zone', $pId);
   }
-*/
-
-
-/*
-PlaceCarpet
-$carpets_left = self::getUniqueValueFromDB( "SELECT carpet_$carpet_type FROM player_carpets WHERE player_id='$player_id'" );
-
-// Update stats
-$visibleCarpetsOnBoard = $this->getVisibleCarpetsOnBoard();
-$current_carpet_zone = $this->getTaxesZone( $visibleCarpetsOnBoard, $player_id, $carpet_type, $x1, $y1 );
-$current_carpet_zone_count = count( $current_carpet_zone );
-
-$table_largest_carpet_zone = self::getStat( 'table_largest_carpet_zone' );
-$player_largest_carpet_zone = self::getStat( 'player_largest_carpet_zone', $player_id );
-
-if( $table_largest_carpet_zone < $current_carpet_zone_count ) {
-  self::setStat( $current_carpet_zone_count, 'table_largest_carpet_zone' );
-}
-if( $player_largest_carpet_zone < $current_carpet_zone_count ) {
-  self::setStat( $current_carpet_zone_count, 'player_largest_carpet_zone', $player_id );
-}
-*/
 }
 
 ?>

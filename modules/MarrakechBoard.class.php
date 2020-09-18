@@ -149,6 +149,7 @@ class MarrakechBoard extends APP_GameClass
 
     // Compute the taxe cost
     $taxerId = $cell['pId'];
+    $taxer = PlayerManager::getById($taxerId);
     $type = $cell['type'];
     $zone = self::getTaxesZone($taxerId, $type, ['x' => $assam['x'], 'y' => $assam['y']]);
     $cost = count($zone);
@@ -161,14 +162,14 @@ class MarrakechBoard extends APP_GameClass
       $cost = $player['money'];
     }
 
-    // TODO : stat update
+    // Update stat
+    StatManager::payTaxes($player, $taxer, $cost);
 
     // Update moneys
     PlayerManager::updateMoney($taxerId, $cost);
     PlayerManager::updateMoney($pId, -$cost);
 
     // Notify players
-    $taxer = PlayerManager::getById($taxerId);
     NotificationManager::payTaxes($player, $taxer, count($zone), $cost, $zone, $eliminated);
 
     // Update score and UI, and proceed to next state/

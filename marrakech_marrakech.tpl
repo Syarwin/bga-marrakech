@@ -36,6 +36,7 @@
 var jstpl_assam = '<div id="assam" data-dir="${dir}"></div>';
 var jstpl_carpet = '<div id="carpet_${id}" class="carpet carpet_${orientation} carpet_${type}_${orientation}"></div>';
 
+var jstpl_next_carpet = '<div id="next_carpet_${pId}" class="next_carpet"></div>';
 var jstpl_carpet_info = `
 <div class="player_info" id="carpet_player_info_\${type}">
   <div class="carpet_info" id="carpet_info_\${type}"></div>

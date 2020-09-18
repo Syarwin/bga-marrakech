@@ -52,7 +52,7 @@ onEnteringState: function (stateName, args) {
 	debug('Entering state: ' + stateName, args);
 
 	// Stop here if it's not the current player's turn for some states
-	if (["rotateAssam",].includes(stateName) && !this.isCurrentPlayerActive()) return;
+	if (["rotateAssam","placeCarpet","moveAssam"].includes(stateName) && !this.isCurrentPlayerActive()) return;
 
 	// Call appropriate method
 	var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
@@ -134,6 +134,17 @@ addCarpetInfo: function(pId, carpet_type, carpet_count){
 },
 
 /*
+ * addNextCarpetInfo
+ */
+addNextCarpetInfo: function(pId, next_carpet){
+  dojo.destroy('next_carpet_' + pId);
+  if(next_carpet != 0){
+    dojo.place(this.format_block('jstpl_next_carpet', { pId: pId }) , "carpet_info_" + next_carpet);
+    this.addTooltip('next_carpet_' + pId, _('Next carpet to place'), '');
+  }
+},
+
+/*
  * addPlayerInfos : add all infos about player in the player's board
  */
 addPlayerInfos: function(player){
@@ -142,14 +153,10 @@ addPlayerInfos: function(player){
   // Add carpet count for the player
   this.addCarpetInfo(pId, player.carpet_type, player['carpet_' + player.carpet_type]);
 
-  if(this.playersNumber == 2){ // If only two players => two carpet counts
+  if(this.gamedatas.bplayers.length == 2){ // If only two players => two carpet counts
     var carpet_type_bis = parseInt(player.carpet_type) + 1;
     this.addCarpetInfo(pId, carpet_type_bis, player['carpet_' + carpet_type_bis]);
-
-    if(player.next_carpet != 0){
-      dojo.addClass('carpet_info_' + player.next_carpet, 'nextCarpet');
-//      this.addTooltip( 'next_carpet_' + player_id, _('Next carpet to place'), '' );
-    }
+    this.addNextCarpetInfo(pId, player.next_carpet);
   }
 
   // Add money count for the player
@@ -288,19 +295,19 @@ notif_moveAssam: function(n){
 
 notif_payTaxes: function(n){
   debug("Notif: paying taxes", n);
-  // TODO
-  /*
-  var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', {
-      amount: notif.args.taxesCost
-  } ) , 'money_' + notif.args.playerId );
-  var tax_inc = dojo.place( this.format_block( 'jstpl_tax_inc', {
-      amount: notif.args.taxesCost
-  } ) , 'money_' + notif.args.playerTaxesId );
-  this.fadeOutAndDestroy( tax_dec, 2000 );
-  this.fadeOutAndDestroy( tax_inc, 2000 );
-  dojo.byId('money_' + notif.args.playerId + '_count').innerHTML = notif.args.playerMoney;
-  dojo.byId('money_' + notif.args.playerTaxesId + '_count').innerHTML = notif.args.playerTaxesMoney;
-  */
+  n.args.zone.forEach((place, i) => {
+    if(i < n.args.payed)
+      this.slideTemporaryObject('<div class="coin"></div>', "board", "square_" + place.x + "_" + place.y, 'money_count_' + n.args.taxerId, 1500, 0);
+  });
+
+  setTimeout(() => {
+    var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', { amount: n.args.payed} ) , 'money_' + n.args.pId );
+    var tax_inc = dojo.place( this.format_block( 'jstpl_tax_inc', { amount: n.args.payed} ) , 'money_' + n.args.taxerId );
+    this.fadeOutAndDestroy(tax_dec, 4000);
+    this.fadeOutAndDestroy(tax_inc, 4000);
+    this.incCounter('money_count_' + n.args.pId, -n.args.payed);
+    this.incCounter('money_count_' + n.args.taxerId, n.args.payed);
+  }, 1400);
 },
 
 
@@ -373,10 +380,7 @@ onValidateCarpet: function() {
 notif_placeCarpet: function(n){
   debug("Notif: place carpet", n);
   this.addCarpetOnBoard(n.args, true);
-
-// TODO
-  // Update carpet counter for active player
-//  dojo.byId('carpet_' + notif.args.carpet_type + '_count').innerHTML = notif.args.carpets_left;
+  this.incCounter('carpet_count_' + n.args.pId + '_' + n.args.type, -1);
 },
 
 
@@ -402,9 +406,11 @@ clearPossible: function(){
   dojo.query(".next_direction").style('display', 'none');
   dojo.forEach( this.nextDirectionConnections, dojo.disconnect);
   dojo.query(".square").removeClass("selectable selected");
-
 },
 
+incCounter: function(id, value){
+  $(id).innerHTML = parseInt($(id).innerHTML) + value;
+},
 
 
 ///////////////////////////////////////////////////
@@ -421,7 +427,7 @@ setupNotifications: function () {
 		['rotateAssam', 500],
     ['moveAssam', 500],
     ['rollDice', 2000],
-    ['placeCarpet', 1500],
+    ['placeCarpet', 1000],
     ['updatePlayersInfo', 10],
     ['payTaxes', 1500],
 	];
@@ -437,46 +443,25 @@ notif_updatePlayersInfo: function(n){
   debug("Notif: update users", n);
 
   n.args.players.forEach(player => {
+    // Update money and scores
     this.scoreCtrl[player.id].setValue(player.score);
     $('money_count_' + player.id).innerHTML = player.money;
 
+    // Update carpets stocks
     for(var i = 1; i <= 4; i++){
       var carpetInfo = $('carpet_count_' + player.id + '_' + i);
       if(carpetInfo)
-        carpetInfo.innerHTML = player['carpet_' + i];
+        carpetInfo.innerHTML = player.eliminated == 1? 0 : player['carpet_' + i];
     }
 
-    // TODO : handle eliminate
-    /*
-    // Reset carpets for this player and disable panel
-    dojo.byId('carpet_' + notif.args.carpetType + '_count').innerHTML = '0';
-    if( this.playersNumber == 2 )
-    {
-      var carpet_type_bis = parseInt(notif.args.carpetType) + 1;
-      dojo.byId('carpet_' + carpet_type_bis + '_count').innerHTML = '0';
-      dojo.destroy('next_carpet_' + notif.args.playerId);
+    // Update next carpet info
+    this.addNextCarpetInfo(player.id, player.next_carpet);
+
+    // Eliminate
+    if(player.eliminated == 1){
+      dojo.destroy('next_carpet_' + player.id);
+      this.disablePlayerPanel(player.id);
     }
-
-    this.disablePlayerPanel( notif.args.playerId );
-    */
-
-/*
-    // Update next carpet
-    if ( notif.args.nextCarpet == 0 )
-    {
-      // remove next carpet
-      dojo.destroy('next_carpet_' + notif.args.playerId);
-    }
-    else
-    {
-      var current_next_carpet = dojo.query( '#player_board_' + notif.args.playerId + ' .carpet_info_' + notif.args.nextCarpet )[0];
-
-      dojo.destroy('next_carpet_' + notif.args.playerId);
-      dojo.place( this.format_block( 'jstpl_next_carpet', {
-        id: notif.args.playerId
-      } ) , current_next_carpet );
-    }*/
-
   });
 },
 

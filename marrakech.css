@@ -48,7 +48,7 @@
   width: 80px;
   height: 80px;
   border-radius:20px;
-  z-index:1000;
+  z-index:100;
 }
 
 #board .square.selectable {
@@ -63,6 +63,15 @@
   background-color:rgba(0,200,0,0.7);
   border-radius: 0px;
   box-shadow: 1px 1px 5px -1px black;
+}
+
+.coin {
+  width:40px;
+  height:40px;
+  background-image:url("img/coin.png");
+  background-position:center center;
+  z-index:1000;
+  background-repeat: no-repeat;
 }
 
 
@@ -101,7 +110,7 @@
   border: 1px #333 solid;
   z-index: 10;
   box-sizing: border-box;
-  box-shadow:5px 5px 15px -3px black;
+  box-shadow:4px 4px 15px -4px #222;
 }
 
 .carpet_h { width: 140px; height: 70px; }
@@ -151,10 +160,12 @@
 .tax_dec {
   position: absolute;
   width: 30px;
-  right: -8px;
-  top: -6px;
+  right: -14px;
+  top: -18px;
   text-align: right;
   font-weight: bold;
+  font-size: 25px;
+  text-shadow: 1px 1px 5px white, -1px -1px 5px white;
 }
 
 .tax_inc { color: green; }

@@ -77,36 +77,14 @@ class Marrakech extends Table
    */
 	function getGameProgression()
 	{
-		return 10;
+		// Compute total carpets depending on #players, remeaning players
+		$carpetPerPlayer = [0, 0, 24, 15, 12];
+		$carpetsTotal = PlayerManager::getPlayersLeft() * $carpetPerPlayer[self::getPlayersNumber()];
 
-		// TODO
-		// Get total of carpets depending of the number of players and eliminated players
-		$carpets_total = 0;
+		// Get carpets left
+		$carpetsLeft = PlayerManager::getCarpetsLeft();
 
-		$sql = "SELECT count(player_id) FROM player WHERE player_eliminated = 1";
-		$players_eliminated = self::getUniqueValueFromDB($sql);
-
-		switch (self::getPlayersNumber()) {
-			case 2:
-				$carpets_total = 48 - $players_eliminated * 24;
-				break;
-			case 3:
-				$carpets_total = 45 - $players_eliminated * 15;
-				break;
-			case 4:
-				$carpets_total = 48 - $players_eliminated * 12;
-				break;
-		}
-
-		// Get the carpets left
-		$sql =
-			"SELECT SUM(carpet_1) + SUM(carpet_2) + SUM(carpet_3) + SUM(carpet_4) as TOTAL  FROM player_carpets";
-		$carpets_left = self::getUniqueValueFromDB($sql);
-
-		// Return the progression
-		return round(
-			(($carpets_total - intval($carpets_left)) * 100) / $carpets_total
-		);
+		return (($carpetsTotal - intval($carpetsLeft)) * 100) / $carpetsTotal;
 	}
 
 
@@ -189,7 +167,7 @@ class Marrakech extends Table
 	function rollDice()
 	{
 		// Roll die and move Assam
-		$face = 1;//bga_rand(1, 6);
+		$face = bga_rand(1, 6);
 		$roll = $this->marrakechDice[$face];
 		NotificationManager::rollDice($face, $roll);
 		MarrakechAssam::move($roll);
@@ -236,8 +214,6 @@ class Marrakech extends Table
 		// Update score and UI
 		PlayerManager::updateScores();
 		PlayerManager::updateUi();
-
-		// TODO : update stats
 
 		$newState = (self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN && !$this->isEndOfGame())? "rotateAssam" : "nextPlayer";
 		$this->gamestate->nextState($newState);

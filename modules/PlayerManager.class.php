@@ -40,8 +40,8 @@ class PlayerManager extends APP_GameClass
         $carpets[$i] = count($players) == 4? 12 : 15;
       } else {
         $type = 2*$i + 1;
-        $carpets[2*$i]     = 12;
-        $carpets[2*$i + 1] = 12;
+        $carpets[2*$i]     = 1; //12;
+        $carpets[2*$i + 1] = 1; //12;
         $next = $type + random_int(0, 1); // Carpet indexing start at 1
       }
 
@@ -65,6 +65,7 @@ class PlayerManager extends APP_GameClass
 		return self::getObjectFromDB("SELECT player_id id, player_name name, player_eliminated eliminated, player_score score,
       money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player WHERE player_id = $pId");
 	}
+
 
 	public static function getPlayersLeft(){
 		return self::getUniqueValueFromDB("SELECT count(player_id) FROM player WHERE player_eliminated = 0");
@@ -96,6 +97,9 @@ class PlayerManager extends APP_GameClass
 
     // Notify players
     NotificationManager::placeCarpet($cId, $x, $y, $orientation, $type);
+
+		// Update stats
+		StatManager::placeCarpet($pId, $type, ['x' => $x, 'y' => $y]);
 
 
     // Update next_carpet in db for next move for 2 players
@@ -139,20 +143,20 @@ class PlayerManager extends APP_GameClass
       }
     }
 
-    foreach ($players as $pId => $player) {
+    foreach ($players as $pId => &$player) {
       $score_aux = (int) $player['money'];
       $score = $score_aux + $player['carpet_score'];
 
       // Update scores for current player
-      self::DbQuery( "UPDATE player SET player_score = $score, player_score_aux = $score_aux WHERE player_id = $pId");
+      self::DbQuery("UPDATE player SET player_score = $score, player_score_aux = $score_aux WHERE player_id = $pId");
     }
   }
 
 
 
 	public static function eliminate($pId){
-		self::DbQuery("UPDATE player_carpets SET player_score = 0, player_score_aux = 0, carpet_1 = 0, carpet_2 = 0, carpet_3 = 0, carpet_4 = 0, next_carpet = 0 WHERE player_id = $pId");
-		Marrakech::eliminatePlayer($pId);
+		self::DbQuery("UPDATE player SET money = 0, player_score = 0, player_score_aux = 0, carpet_1 = 0, carpet_2 = 0, carpet_3 = 0, carpet_4 = 0, next_carpet = 0 WHERE player_id = $pId");
+		Marrakech::$instance->eliminatePlayer($pId);
 		self::updateUi();
 	}
 }
