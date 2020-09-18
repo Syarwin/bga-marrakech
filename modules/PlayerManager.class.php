@@ -40,8 +40,8 @@ class PlayerManager extends APP_GameClass
         $carpets[$i] = count($players) == 4? 12 : 15;
       } else {
         $type = 2*$i + 1;
-        $carpets[2*$i]     = 1; //12;
-        $carpets[2*$i + 1] = 1; //12;
+        $carpets[2*$i]     = 12;
+        $carpets[2*$i + 1] = 12;
         $next = $type + random_int(0, 1); // Carpet indexing start at 1
       }
 

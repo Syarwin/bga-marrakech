@@ -12,6 +12,7 @@
  * gameoptions.inc.php
  *
  */
+require_once("modules/constants.inc.php");
 
 $game_options = [
   OPTION_ROTATE_ASSAM => [

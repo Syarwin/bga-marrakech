@@ -106,7 +106,8 @@ setup: function (gamedatas) {
   // Setting up Assam
   this.setAssam(gamedatas.assam);
 
-  // Click listener for dice
+  // Setting up dice
+  var dice = dojo.place(this.format_block( 'jstpl_dice', { face: gamedatas.dice}), 'dice-container');
   dojo.connect($("dice"), 'click', () => this.rollDice());
 
   // Click listener on square_action

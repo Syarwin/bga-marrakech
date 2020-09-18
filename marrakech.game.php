@@ -28,6 +28,7 @@ class Marrakech extends Table
 
 		self::initGameStateLabels([
 			"RotateAssam" => OPTION_ROTATE_ASSAM,
+			"diceFace"   => DICE_FACE,
 		]);
 	}
 
@@ -50,6 +51,9 @@ class Marrakech extends Table
 		// Init game statistics
 		StatManager::setupNewGame();
 
+		// Init dice face
+		self::setGameStateInitialValue('diceFace', 0);
+
 		// Activate first player (which is in general a good idea :) )
 		$pId = $this->activeNextPlayer();
 		StatManager::newTurn($pId);
@@ -68,6 +72,7 @@ class Marrakech extends Table
 			'bplayers' => PlayerManager::getUiData(),
 			'assam' => MarrakechAssam::get(),
 			'carpets' => MarrakechBoard::getUiData(),
+			'dice' => $this->getGameStateValue('diceFace'),
 		];
 	}
 
@@ -168,7 +173,8 @@ class Marrakech extends Table
 	{
 		// Roll die and move Assam
 		$face = bga_rand(1, 6);
-		$roll = $this->marrakechDice[$face];
+ 		$this->setGameStateValue('diceFace', $face);
+ 		$roll = $this->marrakechDice[$face];
 		NotificationManager::rollDice($face, $roll);
 		MarrakechAssam::move($roll);
 		$eliminated = MarrakechBoard::payTaxes();

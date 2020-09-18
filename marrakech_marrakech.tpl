@@ -16,16 +16,7 @@
     <div class="next_direction" id="next_direction_W"></div>
   </div>
 
-  <div class="whiteblock" id="dice-container">
-    <div id="dice" data-show="0">
-      <div class="face1"></div>
-      <div class="face2"></div>
-      <div class="face3"></div>
-      <div class="face4"></div>
-      <div class="face5"></div>
-      <div class="face6"></div>
-    </div>
-  </div>
+  <div class="whiteblock" id="dice-container"></div>
 </div>
 
 
@@ -54,6 +45,17 @@ var jstpl_money_info = `
 
 var jstpl_tax_inc = '<div class="tax_inc">+${amount}</div>';
 var jstpl_tax_dec = '<div class="tax_dec">-${amount}</div>';
+
+var jstpl_dice = `
+<div id="dice" data-show="\${face}">
+  <div class="face1"></div>
+  <div class="face2"></div>
+  <div class="face3"></div>
+  <div class="face4"></div>
+  <div class="face5"></div>
+  <div class="face6"></div>
+</div>
+`;
 </script>
 
 {OVERALL_GAME_FOOTER}

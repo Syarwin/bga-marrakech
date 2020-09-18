@@ -27,9 +27,7 @@ define("ROTATE_AT_END_OF_TURN", 2);
  * Globals
  */
 
-define("ASSAM_X", 30);
-define("ASSAM_Y", 31);
-define("ASSAM_DIR", 32);
+define("DICE_FACE", 30);
 
 define("NORTH", 0);
 define("EAST", 1);
