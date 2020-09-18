@@ -48,18 +48,21 @@
   width: 80px;
   height: 80px;
   border-radius:20px;
+  z-index:1000;
 }
 
 #board .square.selectable {
   cursor:pointer;
-  background-color:rgba(100,100,255,0.3);
+  background-color:rgba(255,255,255,0.4);
 }
 #board .square.selectable:hover {
-  background-color:rgba(100,100,255,0.4);
+  background-color:rgba(255,255,255,0.6);
 }
 
 #board .square.selected {
-  background-color:rgba(100,100,255,0.5);
+  background-color:rgba(0,200,0,0.7);
+  border-radius: 0px;
+  box-shadow: 1px 1px 5px -1px black;
 }
 
 

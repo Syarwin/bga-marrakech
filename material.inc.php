@@ -21,10 +21,12 @@
 
 require_once("modules/constants.inc.php");
 require_once("modules/Utils.class.php");
-require_once("modules/MarrakechPlayerManager.class.php");
+require_once("modules/PlayerManager.class.php");
+require_once("modules/NotificationManager.class.php");
+require_once("modules/StatManager.class.php");
+
 require_once("modules/MarrakechBoard.class.php");
 require_once("modules/MarrakechAssam.class.php");
-require_once("modules/NotificationManager.class.php");
 
 
 // Marrakech die (D6 with faces 1,2,2,3,3,4)

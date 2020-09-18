@@ -37,7 +37,7 @@ $machinestates = [
       "transitions" => [
         "rotateAssam" => ST_ROTATE_ASSAM,
         "moveAssam" => ST_MOVE_ASSAM,
-        "zombiePass" => ST_NEXT_PLAYER
+        "zombiePass" => ST_ELIMINATE_PLAYER
       ]
     ],
 
@@ -51,7 +51,7 @@ $machinestates = [
       "transitions" => [
         "moveAssam" => ST_MOVE_ASSAM,
         "nextPlayer" => ST_NEXT_PLAYER,
-        "zombiePass" => ST_NEXT_PLAYER
+        "zombiePass" => ST_ELIMINATE_PLAYER
       ]
     ],
 
@@ -65,7 +65,8 @@ $machinestates = [
       "transitions" => [
         "placeCarpet" => ST_PLACE_CARPET,
         "nextPlayer" => ST_NEXT_PLAYER,
-        "zombiePass" => ST_NEXT_PLAYER,
+        "zombiePass" => ST_ELIMINATE_PLAYER,
+        'eliminate' => ST_ELIMINATE_PLAYER,
       ]
     ],
 
@@ -80,7 +81,7 @@ $machinestates = [
       "transitions" => [
         "nextPlayer" => ST_NEXT_PLAYER,
         "rotateAssam" => ST_ROTATE_ASSAM,
-        "zombiePass" => ST_NEXT_PLAYER
+        "zombiePass" => ST_ELIMINATE_PLAYER
       ]
     ],
 
@@ -96,6 +97,19 @@ $machinestates = [
         "startTurn" => ST_START_OF_TURN
       ]
     ],
+
+    // Eliminate player and go to next player
+    ST_ELIMINATE_PLAYER => [
+      'name' => 'eliminatePlayer',
+      'description' => '',
+      'type' => 'game',
+      'action' => 'stEliminatePlayer',
+      'transitions' => [
+        'play' => ST_START_OF_TURN,
+        'endgame' => ST_GAME_END,
+      ],
+    ],
+
 
     // Final state.
     // Please do not modify (and do not overload action/args methods).

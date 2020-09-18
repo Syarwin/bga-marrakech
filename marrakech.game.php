@@ -45,24 +45,14 @@ class Marrakech extends Table
 		MarrakechAssam::init();
 
 		// Create and give each player 30 dirhams
-		MarrakechPlayerManager::setupNewGame($players);
+		PlayerManager::setupNewGame($players);
 
 		// Init game statistics
-		self::initStat('table', 'table_turns_number', 0);
-		self::initStat('table', 'table_largest_carpet_zone', 0);
-		self::initStat('table', 'table_highest_taxes_collected', 0);
-		self::initStat('player', 'player_turns_number', 0);
-		self::initStat('player', 'player_money_paid', 0);
-		self::initStat('player', 'player_money_earned', 0);
-		self::initStat('player', 'player_largest_carpet_zone', 0);
-		self::initStat('player', 'player_highest_taxes_collected', 0);
+		StatManager::setupNewGame();
 
 		// Activate first player (which is in general a good idea :) )
-		$player_id = $this->activeNextPlayer();
-
-		// New turn increment stats
-		self::incStat(1, 'table_turns_number');
-		self::incStat(1, 'player_turns_number', $player_id);
+		$pId = $this->activeNextPlayer();
+		StatManager::newTurn($pId);
 	}
 
 
@@ -75,7 +65,7 @@ class Marrakech extends Table
 	 */
 	protected function getAllDatas() {
 		return [
-			'bplayers' => MarrakechPlayerManager::getUiData(),
+			'bplayers' => PlayerManager::getUiData(),
 			'assam' => MarrakechAssam::get(),
 			'carpets' => MarrakechBoard::getUiData(),
 		];
@@ -126,54 +116,58 @@ class Marrakech extends Table
 	//////////// Next player / start of turn   ////////////
 	///////////////////////////////////////////////////////
 
-
-	function stNextPlayer()
+	/*
+	 * stNextPlayer : go to the next (non eliminated) player
+	 */
+	function stNextPlayer($next = true)
 	{
 		if ($this->isEndOfGame()) {
 			$this->gamestate->nextState("endGame");
 		} else {
 			// Active next player
-			$pId = $this->activeNextPlayer();
+			$pId = $next ? $this->activeNextPlayer() : $this->getActivePlayerId();
+			if (PlayerManager::isEliminated($pId)) {
+	      $this->stNextPlayer();
+	      return;
+	    }
+
 			self::giveExtraTime($pId);
+			StatManager::newTurn($pId);
 			$this->gamestate->nextState("startTurn");
 		}
 	}
 
-
+	/*
+	 * isEndOfGame : ends the game whenever only 1 players is left, or when all the rugs where placed
+	 */
 	function isEndOfGame()
 	{
-		return false;
-
-		// TODO
-		$sql =
-			"SELECT SUM(carpet_1) + SUM(carpet_2) + SUM(carpet_3) + SUM(carpet_4) as TOTAL  FROM player_carpets";
-		$carpets_left = self::getUniqueValueFromDB($sql);
-		$sql = "SELECT count(player_id) FROM player WHERE player_eliminated = 1";
-		$players_eliminated = self::getUniqueValueFromDB($sql);
-
-		if (
-			$carpets_left > 0 &&
-			$players_eliminated < self::getPlayersNumber() - 1
-		) {
-			return false;
-		} else {
-			return true;
-		}
+		return PlayerManager::getPlayersLeft() == 1 || PlayerManager::getCarpetsLeft() == 0;
 	}
 
 
 
-
+	/*
+   * stStartOfTurn: is called at the start of a player's turn and go to right step according to variant
+   */
 	function stStartOfTurn()
 	{
-		// New turn increment stats
-		self::incStat(1, 'table_turns_number');
-		self::incStat(1, 'player_turns_number', self::getActivePlayerId());
-
 		// Rotate assam at the beginning/end of turn depending on game option
 		$newState = self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN? "moveAssam" : "rotateAssam";
 		$this->gamestate->nextState($newState);
 	}
+
+
+	/*
+   * stEliminatePlayer: this function is called when the active player is eliminated
+   */
+  public function stEliminatePlayer()
+  {
+    $pId = $this->getActivePlayerId();
+    $this->activeNextPlayer();
+    PlayerManager::eliminate($pId);
+    $this->stNextPlayer(false);
+  }
 
 
 	///////////////////////////////////////
@@ -195,13 +189,13 @@ class Marrakech extends Table
 	function rollDice()
 	{
 		// Roll die and move Assam
-		$face = bga_rand(1, 6);
+		$face = 1;//bga_rand(1, 6);
 		$roll = $this->marrakechDice[$face];
 		NotificationManager::rollDice($face, $roll);
 		MarrakechAssam::move($roll);
-//		MarrakechBoard::payTaxes();
+		$eliminated = MarrakechBoard::payTaxes();
 
-		$this->gamestate->nextState("placeCarpet");
+		$this->gamestate->nextState($eliminated? "eliminate" : "placeCarpet");
 	}
 
 
@@ -237,30 +231,13 @@ class Marrakech extends Table
 
 		// Place carpet
 		$pId = self::getActivePlayerId();
-		MarrakechPlayerManager::placeCarpet($pId, $x, $y, $orientation);
+		PlayerManager::placeCarpet($pId, $x, $y, $orientation);
 
 		// Update score and UI
-		MarrakechPlayerManager::updateScores();
-		MarrakechPlayerManager::updateUi();
-/*
-TODO
-					$carpets_left = self::getUniqueValueFromDB( "SELECT carpet_$carpet_type FROM player_carpets WHERE player_id='$player_id'" );
+		PlayerManager::updateScores();
+		PlayerManager::updateUi();
 
-					// Update stats
-					$visibleCarpetsOnBoard = $this->getVisibleCarpetsOnBoard();
-					$current_carpet_zone = $this->getTaxesZone( $visibleCarpetsOnBoard, $player_id, $carpet_type, $x1, $y1 );
-					$current_carpet_zone_count = count( $current_carpet_zone );
-
-					$table_largest_carpet_zone = self::getStat( 'table_largest_carpet_zone' );
-					$player_largest_carpet_zone = self::getStat( 'player_largest_carpet_zone', $player_id );
-
-					if( $table_largest_carpet_zone < $current_carpet_zone_count ) {
-						self::setStat( $current_carpet_zone_count, 'table_largest_carpet_zone' );
-					}
-					if( $player_largest_carpet_zone < $current_carpet_zone_count ) {
-						self::setStat( $current_carpet_zone_count, 'player_largest_carpet_zone', $player_id );
-					}
-*/
+		// TODO : update stats
 
 		$newState = (self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN && !$this->isEndOfGame())? "rotateAssam" : "nextPlayer";
 		$this->gamestate->nextState($newState);
@@ -277,8 +254,7 @@ TODO
 	 */
 	public function zombieTurn($state, $activePlayer) {
 		if (array_key_exists('zombiePass', $state['transitions'])) {
-			//$this->playerManager->eliminate(); TODO
-			$this->gamestate->nextState('zombiePass');
+			$this->gamestate->nextState('eliminate');
 		} else {
 			throw new BgaVisibleSystemException('Zombie player ' . $activePlayer . ' stuck in unexpected state ' . $state['name']);
 		}

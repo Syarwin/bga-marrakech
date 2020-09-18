@@ -26,25 +26,69 @@ define(["dojo", "dojo/_base/declare", "ebg/core/gamegui", "ebg/counter"], functi
  * Constructor
  */
 constructor: function () {
-  this.playersNumber = null;
-
   this._assam = {
     x: null,
     y: null,
     dir: null
   };
-
-  this.carpetPlaced = {
-    x1: null,
-    y1: null,
-    x2: null,
-    y2: null
-  };
-
   this.nextDirectionConnections = [];
 },
 
 
+////////////////////////////
+////////////////////////////
+///////		Framework 	//////
+////////////////////////////
+////////////////////////////
+
+/*
+ * onEnteringState:
+ * 	this method is called each time we are entering into a new game state.
+ * params:
+ *	- str stateName : name of the state we are entering
+ *	- mixed args : additional information
+ */
+onEnteringState: function (stateName, args) {
+	debug('Entering state: ' + stateName, args);
+
+	// Stop here if it's not the current player's turn for some states
+	if (["rotateAssam",].includes(stateName) && !this.isCurrentPlayerActive()) return;
+
+	// Call appropriate method
+	var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
+	if (this[methodName] !== undefined)
+		this[methodName](args.args);
+},
+
+/*
+ * onLeavingState:
+ * 	this method is called each time we are leaving a game state.
+ *
+ * params:
+ *	- str stateName : name of the state we are leaving
+ */
+onLeavingState: function (stateName) {
+	debug('Leaving state: ' + stateName);
+	this.clearPossible();
+},
+
+
+/*
+ * onUpdateActionButtons:
+ * 	called by BGA framework before onEnteringState
+ *	in this method you can manage "action buttons" that are displayed in the action status bar (ie: the HTML links in the status bar).
+ */
+onUpdateActionButtons: function (stateName, args) {
+	debug('Update action buttons: ' + stateName, args);
+},
+
+
+
+////////////////////////
+////////////////////////
+///////		SETUP 	//////
+////////////////////////
+////////////////////////
 /*
  * Setup:
  *	This method set up the game user interface according to current game situation specified in parameters
@@ -81,8 +125,9 @@ setup: function (gamedatas) {
  */
 addCarpetInfo: function(pId, carpet_type, carpet_count){
   var div = dojo.place(this.format_block( 'jstpl_carpet_info', {
-    carpet_type: carpet_type,
-    carpet_count: carpet_count,
+    pId: pId,
+    type: carpet_type,
+    count: carpet_count,
   }) , 'player_board_' + pId);
 
   this.addTooltip(div.id, _('Number of rugs left'), '' );
@@ -143,78 +188,16 @@ addCarpetOnBoard: function(carpet, animation){
 
   let carpetId = 'carpet_' + carpet.id;
   let squareId = 'square_' + carpet.x + '_' + carpet.y;
-  let offsetX = carpet.orientation == 'h'? 40 : 0;
-  let offsetY = carpet.orientation == 'v'? 40 : 0;
+  let horiz = carpet.orientation == 'h';
 
   if(animation){
     this.placeOnObject(carpetId, 'overall_player_board_'+ carpet.pId );
-    this.slideToObjectPos(carpetId, squareId, 0, 0, 1000).play();
+    this.slideToObjectPos(carpetId, squareId, horiz? 10 : 5, horiz? 5 : 10, 1000).play();
   } else {
-    this.placeOnObjectPos(carpetId, squareId, offsetX, offsetY);
+    this.placeOnObjectPos(carpetId, squareId, horiz? 40 : 0, horiz? 0 : 40);
   }
 },
 
-
-
-
-/*
- * onEnteringState:
- * 	this method is called each time we are entering into a new game state.
- * params:
- *	- str stateName : name of the state we are entering
- *	- mixed args : additional information
- */
-onEnteringState: function (stateName, args) {
-	debug('Entering state: ' + stateName, args);
-
-	// Stop here if it's not the current player's turn for some states
-	if (["rotateAssam",].includes(stateName) && !this.isCurrentPlayerActive()) return;
-
-	// Call appropriate method
-	var methodName = "onEnteringState" + stateName.charAt(0).toUpperCase() + stateName.slice(1);
-	if (this[methodName] !== undefined)
-		this[methodName](args.args);
-},
-
-/*
- * onLeavingState:
- * 	this method is called each time we are leaving a game state.
- *
- * params:
- *	- str stateName : name of the state we are leaving
- */
-onLeavingState: function (stateName) {
-	debug('Leaving state: ' + stateName);
-	this.clearPossible();
-},
-
-
-
-
-////////////////////////////
-////////////////////////////
-///////		Utility 		//////
-////////////////////////////
-////////////////////////////
-
-
-/*
- * takeAction: default AJAX call with locked interface
- */
-takeAction: function (action, data, callback) {
-	data = data || {};
-	data.lock = true;
-	callback = callback || function (res) { };
-	this.ajaxcall("/marrakech/marrakech/" + action + ".html", data, this, callback);
-},
-
-
-clearPossible: function(){
-  dojo.query(".next_direction").style('display', 'none');
-  dojo.forEach( this.nextDirectionConnections, dojo.disconnect);
-  dojo.query(".square").removeClass("selectable selected");
-
-},
 
 
 ////////////////////////
@@ -293,13 +276,32 @@ notif_rollDice: function(n){
 notif_rotateAssam: function(n){
   debug("Notif: rotate Assam", n);
   dojo.attr('assam', 'data-dir', n.args.assam.dir);
+  this._assam = n.args.assam;
 },
 
 notif_moveAssam: function(n){
   debug("Notif: move Assam", n);
   this.slideToObject( 'assam', 'square_' + n.args.assam.x + '_' + n.args.assam.y, 500).play();
+  this._assam = n.args.assam;
 },
 
+
+notif_payTaxes: function(n){
+  debug("Notif: paying taxes", n);
+  // TODO
+  /*
+  var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', {
+      amount: notif.args.taxesCost
+  } ) , 'money_' + notif.args.playerId );
+  var tax_inc = dojo.place( this.format_block( 'jstpl_tax_inc', {
+      amount: notif.args.taxesCost
+  } ) , 'money_' + notif.args.playerTaxesId );
+  this.fadeOutAndDestroy( tax_dec, 2000 );
+  this.fadeOutAndDestroy( tax_inc, 2000 );
+  dojo.byId('money_' + notif.args.playerId + '_count').innerHTML = notif.args.playerMoney;
+  dojo.byId('money_' + notif.args.playerTaxesId + '_count').innerHTML = notif.args.playerTaxesMoney;
+  */
+},
 
 
 ////////////////////////
@@ -329,9 +331,9 @@ makeSquareSelectable: function(){
 
 
 onClickCell: function(evt) {
-  if(!this.checkAction('placeCarpet')
-  || !dojo.hasClass(evt.target, 'selectable')
-  || dojo.hasClass(evt.target, 'selected'))
+  if(!dojo.hasClass(evt.target, 'selectable')
+  || dojo.hasClass(evt.target, 'selected')
+  || !this.checkAction('placeCarpet'))
     return;
 
   this.removeActionButtons();
@@ -371,7 +373,38 @@ onValidateCarpet: function() {
 notif_placeCarpet: function(n){
   debug("Notif: place carpet", n);
   this.addCarpetOnBoard(n.args, true);
+
+// TODO
+  // Update carpet counter for active player
+//  dojo.byId('carpet_' + notif.args.carpet_type + '_count').innerHTML = notif.args.carpets_left;
 },
+
+
+
+////////////////////////////
+////////////////////////////
+///////		Utility 		//////
+////////////////////////////
+////////////////////////////
+
+/*
+ * takeAction: default AJAX call with locked interface
+ */
+takeAction: function (action, data, callback) {
+	data = data || {};
+	data.lock = true;
+	callback = callback || function (res) { };
+	this.ajaxcall("/marrakech/marrakech/" + action + ".html", data, this, callback);
+},
+
+
+clearPossible: function(){
+  dojo.query(".next_direction").style('display', 'none');
+  dojo.forEach( this.nextDirectionConnections, dojo.disconnect);
+  dojo.query(".square").removeClass("selectable selected");
+
+},
+
 
 
 ///////////////////////////////////////////////////
@@ -389,6 +422,8 @@ setupNotifications: function () {
     ['moveAssam', 500],
     ['rollDice', 2000],
     ['placeCarpet', 1500],
+    ['updatePlayersInfo', 10],
+    ['payTaxes', 1500],
 	];
 
 	notifs.forEach(notif => {
@@ -398,159 +433,53 @@ setupNotifications: function () {
 },
 
 
+notif_updatePlayersInfo: function(n){
+  debug("Notif: update users", n);
+
+  n.args.players.forEach(player => {
+    this.scoreCtrl[player.id].setValue(player.score);
+    $('money_count_' + player.id).innerHTML = player.money;
+
+    for(var i = 1; i <= 4; i++){
+      var carpetInfo = $('carpet_count_' + player.id + '_' + i);
+      if(carpetInfo)
+        carpetInfo.innerHTML = player['carpet_' + i];
+    }
+
+    // TODO : handle eliminate
+    /*
+    // Reset carpets for this player and disable panel
+    dojo.byId('carpet_' + notif.args.carpetType + '_count').innerHTML = '0';
+    if( this.playersNumber == 2 )
+    {
+      var carpet_type_bis = parseInt(notif.args.carpetType) + 1;
+      dojo.byId('carpet_' + carpet_type_bis + '_count').innerHTML = '0';
+      dojo.destroy('next_carpet_' + notif.args.playerId);
+    }
+
+    this.disablePlayerPanel( notif.args.playerId );
+    */
+
+/*
+    // Update next carpet
+    if ( notif.args.nextCarpet == 0 )
+    {
+      // remove next carpet
+      dojo.destroy('next_carpet_' + notif.args.playerId);
+    }
+    else
+    {
+      var current_next_carpet = dojo.query( '#player_board_' + notif.args.playerId + ' .carpet_info_' + notif.args.nextCarpet )[0];
+
+      dojo.destroy('next_carpet_' + notif.args.playerId);
+      dojo.place( this.format_block( 'jstpl_next_carpet', {
+        id: notif.args.playerId
+      } ) , current_next_carpet );
+    }*/
+
+  });
+},
 
 
-
-
-
-
-
-
-
-
-
-
-        // onUpdateActionButtons: in this method you can manage "action buttons" that are displayed in the
-        //                        action status bar (ie: the HTML links in the status bar).
-        //
-        onUpdateActionButtons: function( stateName, args )
-        {
-
-        },
-
-        ///////////////////////////////////////////////////
-        //// Utility methods
-
-
-
-
-
-
-
-        ///////////////////////////////////////////////////
-        //// Reaction to cometD notifications
-
-        /*
-            setupNotifications:
-
-            In this method, you associate each of your game notifications with your local method to handle it.
-
-            Note: game notification names correspond to "notifyAllPlayers" and "notifyPlayer" calls in
-                  your marrakech.game.php file.
-
-        setupNotifications: function()
-        {
-            console.log( 'notifications subscriptions setup' );
-
-            dojo.subscribe( "assamDirection", this, "notif_assamDirection" );
-            this.notifqueue.setSynchronous( "assamDirection", 1500 );
-
-            dojo.subscribe( "diceRoll", this, "notif_diceRoll" );
-            this.notifqueue.setSynchronous( "diceRoll", 1500 );
-
-            dojo.subscribe( "payTaxes", this, "notif_payTaxes" );
-            this.notifqueue.setSynchronous( "payTaxes", 1500 );
-
-            dojo.subscribe( "carpetPlaced", this, "notif_carpetPlaced" );
-            this.notifqueue.setSynchronous( "carpetPlaced", 1500 );
-
-            dojo.subscribe( "updateScores", this, "notif_updateScores" );
-
-            dojo.subscribe( "playerEliminatedInfos", this, "notif_playerEliminatedInfos" );
-
-
-            // Example 1: standard notification handling
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-
-            // Example 2: standard notification handling + tell the user interface to wait
-            //            during 3 seconds after calling the method in order to let the players
-            //            see what is happening in the game.
-            // dojo.subscribe( 'cardPlayed', this, "notif_cardPlayed" );
-            // this.notifqueue.setSynchronous( 'cardPlayed', 3000 );
-            //
-        },
-
-*/
-        notif_payTaxes: function( notif )
-        {
-          var tax_dec = dojo.place( this.format_block( 'jstpl_tax_dec', {
-              amount: notif.args.taxesCost
-          } ) , 'money_' + notif.args.playerId );
-          var tax_inc = dojo.place( this.format_block( 'jstpl_tax_inc', {
-              amount: notif.args.taxesCost
-          } ) , 'money_' + notif.args.playerTaxesId );
-          this.fadeOutAndDestroy( tax_dec, 2000 );
-          this.fadeOutAndDestroy( tax_inc, 2000 );
-          dojo.byId('money_' + notif.args.playerId + '_count').innerHTML = notif.args.playerMoney;
-          dojo.byId('money_' + notif.args.playerTaxesId + '_count').innerHTML = notif.args.playerTaxesMoney;
-        },
-
-        notif_carpetPlaced: function( notif )
-        {
-          if( this.playersNumber == 2 )
-          {
-            // Update next carpet
-            if ( notif.args.nextCarpet == 0 )
-            {
-              // remove next carpet
-              dojo.destroy('next_carpet_' + notif.args.playerId);
-            }
-            else
-            {
-              var current_next_carpet = dojo.query( '#player_board_' + notif.args.playerId + ' .carpet_info_' + notif.args.nextCarpet )[0];
-
-              dojo.destroy('next_carpet_' + notif.args.playerId);
-              dojo.place( this.format_block( 'jstpl_next_carpet', {
-                id: notif.args.playerId
-              } ) , current_next_carpet );
-            }
-          }
-
-          // Update carpet counter for active player
-          dojo.byId('carpet_' + notif.args.carpet_type + '_count').innerHTML = notif.args.carpets_left;
-        },
-
-        notif_updateScores: function( notif )
-        {
-          // Update scores
-          if ( notif.args.scores && notif.args.scores.length > 0 )
-          {
-            for(var i=0; i<notif.args.scores.length; i++)
-            {
-              var player_id = notif.args.scores[i].player_id;
-              var score = notif.args.scores[i].score;
-              this.scoreCtrl[ player_id ].setValue( score );
-            }
-          }
-        },
-
-        notif_playerEliminatedInfos: function( notif )
-        {
-          // Reset carpets for this player and disable panel
-          dojo.byId('carpet_' + notif.args.carpetType + '_count').innerHTML = '0';
-          if( this.playersNumber == 2 )
-          {
-            var carpet_type_bis = parseInt(notif.args.carpetType) + 1;
-            dojo.byId('carpet_' + carpet_type_bis + '_count').innerHTML = '0';
-            dojo.destroy('next_carpet_' + notif.args.playerId);
-          }
-
-          this.disablePlayerPanel( notif.args.playerId );
-        },
-
-        /*
-        Example:
-
-        notif_cardPlayed: function( notif )
-        {
-            console.log( 'notif_cardPlayed' );
-            console.log( notif );
-
-            // Note: notif.args contains the arguments specified during you "notifyAllPlayers" / "notifyPlayer" PHP call
-
-            // TODO: play the card in the user interface.
-        },
-
-        */
    });
 });

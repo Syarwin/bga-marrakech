@@ -51,6 +51,7 @@ class MarrakechBoard extends APP_GameClass
     $board = self::getBoard();
 
     $board[$pos['x']][$pos['y']]['visited'] = true;
+    array_push($queue, $pos);
 		while(!empty($queue)){
       $cell = array_shift($queue);
       array_push($zone, $cell);
@@ -58,15 +59,15 @@ class MarrakechBoard extends APP_GameClass
       for($i = 0; $i < 4; $i++){
         $npos = self::moveInDir($cell, $i);
         // Position must be inside the board and not be on Asssam
-        if(!self::isPositionValidForCarpet($npos, $pos)) continue;
+        if(!self::isPositionValid($npos, $pos)) continue;
         // Should contain a carpet
-        $carpet = $board[$npos['x']][$npos['y']];
+        $carpet = &$board[$npos['x']][$npos['y']];
         if(is_null($carpet)) continue;
         // Should not be already visited
         if(array_key_exists('visited', $carpet)) continue;
         $carpet['visited'] = true;
         // Should belong to same player and same type of carpet (in particular for 2 players game)
-        if(($carpet['pId'] != $pId) || ($carpet['type'] != $type)) continue;
+        if($carpet['pId'] != $pId || $carpet['type'] != $type) continue;
 
         // If this is reached, add the pos to the queue to process it later
         array_push($queue, $npos);
@@ -133,134 +134,47 @@ class MarrakechBoard extends APP_GameClass
 
 
 
-/*
+  public static function payTaxes(){
+    $pId = Marrakech::$instance->getActivePlayerId();
+    $board = self::getBoard();
+    $assam = MarrakechAssam::get();
+    $cell = $board[$assam['x']][$assam['y']];
+    $player = PlayerManager::getById($pId);
 
-payTaxes(){
-  // Check for taxes
-  $visibleCarpetsOnBoard = $this->getVisibleCarpetsOnBoard();
+    // Check if carpet is owned by eliminated player
+    if(is_null($cell) || PlayerManager::isEliminated($cell['pId']) || $cell['pId'] == $pId){
+      NotificationManager::noTaxes($player);
+      return;
+    }
 
-  // Check if carpet is owned by eliminated player
-  $currentCarpetPlayerId =
-    $visibleCarpetsOnBoard[$last_path['x']][$last_path['y']]['player_id'];
-  $currentCarpetPlayerIsEliminated = self::getUniqueValueFromDB(
-    "SELECT player_eliminated FROM player WHERE player_id='$currentCarpetPlayerId'"
-  );
-  $currentCarpetPlayerIsEliminated = intval($currentCarpetPlayerIsEliminated);
+    // Compute the taxe cost
+    $taxerId = $cell['pId'];
+    $type = $cell['type'];
+    $zone = self::getTaxesZone($taxerId, $type, ['x' => $assam['x'], 'y' => $assam['y']]);
+    $cost = count($zone);
 
-  if (
-    $visibleCarpetsOnBoard[$last_path['x']][$last_path['y']] != null &&
-    $visibleCarpetsOnBoard[$last_path['x']][$last_path['y']]['player_id'] !=
-      $player_id &&
-    $currentCarpetPlayerIsEliminated == 0
-  ) {
-    // Pay taxes
-    $taxes_player_id =
-      $visibleCarpetsOnBoard[$last_path['x']][$last_path['y']]['player_id'];
-    $carpet_type =
-      $visibleCarpetsOnBoard[$last_path['x']][$last_path['y']]['carpet_type'];
-
-    $taxes_zone = $this->getTaxesZone(
-      $visibleCarpetsOnBoard,
-      $taxes_player_id,
-      $carpet_type,
-      $last_path['x'],
-      $last_path['y']
-    );
-    $taxes_cost = count($taxes_zone);
-
-    $playerTaxes = self::getObjectFromDB(
-      "SELECT player_id, player_name, player_money FROM player WHERE player_id='$taxes_player_id'"
-    );
-
-    $player_money = self::getUniqueValueFromDB(
-      "SELECT player_money FROM player WHERE player_id='$player_id'"
-    );
-    if ($player_money < $taxes_cost) {
+    // Get remeaning money of player
+    $eliminated = false;
+    if ($player['money'] < $cost) {
       // Player is eliminated !!!
-      $player_eliminated = true;
-      $taxes_cost = $player_money;
+      $eliminated = true;
+      $cost = $player['money'];
     }
 
-    // Update stats
-    self::incStat($taxes_cost, 'player_money_paid', $player_id);
-    self::incStat($taxes_cost, 'player_money_earned', $taxes_player_id);
+    // TODO : stat update
 
-    $table_highest_taxes_collected = self::getStat(
-      'table_highest_taxes_collected'
-    );
-    $player_highest_taxes_collected = self::getStat(
-      'player_highest_taxes_collected',
-      $taxes_player_id
-    );
-
-    if ($table_highest_taxes_collected < $taxes_cost) {
-      self::setStat($taxes_cost, 'table_highest_taxes_collected');
-    }
-    if ($player_highest_taxes_collected < $taxes_cost) {
-      self::setStat(
-        $taxes_cost,
-        'player_highest_taxes_collected',
-        $taxes_player_id
-      );
-    }
-
-    $sql_update1 = "UPDATE player SET player_money = (player_money - $taxes_cost) WHERE player_id='$player_id'";
-    $sql_update2 = "UPDATE player SET player_money = (player_money + $taxes_cost) WHERE player_id='$taxes_player_id'";
-    self::DbQuery($sql_update1);
-    self::DbQuery($sql_update2);
-
-    // Updated money of players
-    $player_money -= $taxes_cost;
-    $player_taxes_money = $playerTaxes['player_money'] + $taxes_cost;
+    // Update moneys
+    PlayerManager::updateMoney($taxerId, $cost);
+    PlayerManager::updateMoney($pId, -$cost);
 
     // Notify players
-    self::notifyAllPlayers(
-      "payTaxes",
-      clienttranslate(
-        '${player_name} pays ${taxesCost} to ${playerTaxesName}'
-      ),
-      [
-        "playerId" => $player_id,
-        "player_name" => $player_name,
-        "playerMoney" => $player_money,
-        "playerTaxesId" => $playerTaxes['player_id'],
-        "playerTaxesName" => $playerTaxes['player_name'],
-        "playerTaxesMoney" => $player_taxes_money,
-        "taxesZone" => $taxes_zone,
-        "taxesCost" => $taxes_cost,
-      ]
-    );
+    $taxer = PlayerManager::getById($taxerId);
+    NotificationManager::payTaxes($player, $taxer, count($zone), $cost, $zone, $eliminated);
+
+    // Update score and UI, and proceed to next state/
+    // Warning : cannot eliminate an active player so we must go to "eliminate" gamestate
+    PlayerManager::updateScores();
+    PlayerManager::updateUi();
+    return $eliminated;
   }
-
-  if ($player_eliminated) {
-    // Remove all carpets from eliminated player, score will be set to 0
-    self::DbQuery(
-      "UPDATE player_carpets SET carpet_1=0, carpet_2=0, carpet_3=0, carpet_4=0, next_carpet=0 WHERE player_id='$player_id'"
-    );
-  }
-
-  // Update scores and notify all players
-  $scores = $this->updateScores();
-  self::notifyAllPlayers("updateScores", '', [
-    'scores' => $scores,
-  ]);
-
-  if ($player_eliminated) {
-    // Player has been eliminated, notify and go to nextPlayer
-    self::eliminatePlayer($player_id);
-    $sql = "SELECT carpet_type FROM player_carpets WHERE player_id='$player_id'";
-    $carpet_type = self::getUniqueValueFromDB($sql);
-
-    self::notifyAllPlayers("playerEliminatedInfos", '', [
-      'playerId' => $player_id,
-      'carpetType' => $carpet_type,
-    ]);
-
-    $this->gamestate->nextState("nextPlayer");
-  } else {
-    // Go to next state (placeCarpet)
-    $this->gamestate->nextState("placeCarpet");
-  }
-}
-*/
 }

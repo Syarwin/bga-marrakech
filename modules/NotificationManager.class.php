@@ -46,6 +46,26 @@ class NotificationManager extends APP_GameClass
   public static function updatePlayersInfos($players){
     Marrakech::$instance->notifyAllPlayers("updatePlayersInfo", '', ['players' => $players ]);
   }
+
+  public static function noTaxes($player){
+    Marrakech::$instance->notifyAllPlayers("message", clienttranslate('${player_name} pays no taxes'), [
+      'player_name' => $player['name'],
+    ]);
+  }
+
+  public static function payTaxes($player, $taxer, $cost, $payed, $zone, $eliminated){
+    // TODO
+    //if($eliminated){
+    Marrakech::$instance->notifyAllPlayers("payTaxes", clienttranslate('${player_name} pays ${payed} to ${taxer_name}'), [
+      "player_name" => $player['name'],
+      "taxer_name" => $taxer['name'],
+      "pId" => $player['id'],
+      "taxerId" => $taxer['id'],
+      "payed" => $payed,
+      "zone" => $zone,
+    ]);
+  }
+
 }
 
 ?>

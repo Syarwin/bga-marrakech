@@ -1,12 +1,12 @@
 <?php
 
 /*
- * MarrakechPlayerManager: all utility functions concerning players
+ * PlayerManager: all utility functions concerning players
  */
 
 //require_once('MarrakechPlayer.class.php');
 
-class MarrakechPlayerManager extends APP_GameClass
+class PlayerManager extends APP_GameClass
 {
 	public static function setupNewGame($players)	{
 		self::DbQuery('DELETE FROM player');
@@ -56,7 +56,30 @@ class MarrakechPlayerManager extends APP_GameClass
       money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player");
   }
 
+	public static function updateUi(){
+		NotificationManager::updatePlayersInfos(self::getUiData());
+	}
 
+
+	public static function getById($pId){
+		return self::getObjectFromDB("SELECT player_id id, player_name name, player_eliminated eliminated, player_score score,
+      money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player WHERE player_id = $pId");
+	}
+
+	public static function getPlayersLeft(){
+		return self::getUniqueValueFromDB("SELECT count(player_id) FROM player WHERE player_eliminated = 0");
+	}
+
+	public static function getCarpetsLeft(){
+		return self::getUniqueValueFromDB("SELECT SUM(carpet_1) + SUM(carpet_2) + SUM(carpet_3) + SUM(carpet_4) as TOTAL FROM player");
+	}
+
+
+
+  public static function isEliminated($pId){
+    $v = self::getUniqueValueFromDB("SELECT player_eliminated FROM player WHERE player_id = $pId");
+    return $v == 1;
+  }
 
   public function placeCarpet($pId, $x, $y, $orientation){
     $nPlayers = count(self::getUiData());
@@ -95,6 +118,11 @@ class MarrakechPlayerManager extends APP_GameClass
   }
 
 
+	function updateMoney($pId, $delta){
+    self::DbQuery( "UPDATE player SET money = (money + $delta) WHERE player_id = $pId");
+  }
+
+
 
   function updateScores(){
     // Set score for all players
@@ -120,7 +148,11 @@ class MarrakechPlayerManager extends APP_GameClass
     }
   }
 
-  function updateUi(){
-    NotificationManager::updatePlayersInfos(self::getUiData());
-  }
+
+
+	public static function eliminate($pId){
+		self::DbQuery("UPDATE player_carpets SET player_score = 0, player_score_aux = 0, carpet_1 = 0, carpet_2 = 0, carpet_3 = 0, carpet_4 = 0, next_carpet = 0 WHERE player_id = $pId");
+		Marrakech::eliminatePlayer($pId);
+		self::updateUi();
+	}
 }

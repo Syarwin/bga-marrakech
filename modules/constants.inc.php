@@ -10,6 +10,7 @@ define('ST_MOVE_ASSAM', 11);
 define('ST_PLACE_CARPET', 12);
 
 define('ST_NEXT_PLAYER', 20);
+define('ST_ELIMINATE_PLAYER', 21);
 define('ST_GAME_END', 99);
 
 
