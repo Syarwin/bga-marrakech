@@ -80,14 +80,12 @@
   width: 80px;
   height: 80px;
   background-image: url('img/marrakech_assam.png');
-  background-position: 25% 0%;
   z-index: 500;
-  transition: transform 0.5s;
 }
-#assam[data-dir="0"] { transform:rotate(180deg); }
-#assam[data-dir="1"] { transform:rotate(-90deg); }
-#assam[data-dir="2"] { transform:rotate(0deg); }
-#assam[data-dir="3"] { transform:rotate(90deg); }
+#assam[data-dir="0"] { background-position: 75% 0%; }
+#assam[data-dir="1"] { background-position: 50% 0%; }
+#assam[data-dir="2"] { background-position: 25% 0%; }
+#assam[data-dir="3"] { background-position: 100% 0%;}
 
 .next_direction {
   position: absolute;
@@ -110,20 +108,20 @@
   border: 1px #333 solid;
   z-index: 10;
   box-sizing: border-box;
-  box-shadow:4px 4px 15px -4px #222;
+  box-shadow:4px 4px 6px -4px #222;
 }
 
-.carpet_h { width: 140px; height: 70px; }
-.carpet_v { width: 70px; height: 140px; }
+.carpet_h { width: 160px; height: 80px; }
+.carpet_v { width: 80px; height: 160px; }
 
 .carpet_yellow_h, .carpet_1_h { background-position: 0px 0px; }
-.carpet_yellow_v, .carpet_1_v { background-position: 0px -140px; }
-.carpet_red_h, .carpet_2_h { background-position: -140px 0px; }
-.carpet_red_v, .carpet_2_v { background-position: -70px -140px; }
-.carpet_orange_h, .carpet_3_h { background-position: 0px -70px; }
-.carpet_orange_v, .carpet_3_v { background-position: -140px -140px; }
-.carpet_blue_h, .carpet_4_h { background-position: -140px -70px; }
-.carpet_blue_v, .carpet_4_v { background-position: -210px -140px; }
+.carpet_yellow_v, .carpet_1_v { background-position: 0px -160px; }
+.carpet_red_h, .carpet_2_h { background-position: -160px 0px; }
+.carpet_red_v, .carpet_2_v { background-position: -80px -160px; }
+.carpet_orange_h, .carpet_3_h { background-position: 0px -80px; }
+.carpet_orange_v, .carpet_3_v { background-position: -160px -160px; }
+.carpet_blue_h, .carpet_4_h { background-position: -160px -80px; }
+.carpet_blue_v, .carpet_4_v { background-position: -240px -160px; }
 
 .carpet_info {
   display: inline-block;
@@ -189,7 +187,6 @@
   height:100%;
   transform-style:preserve-3d;
  	transform-origin:center center;
-	transition: 3s transform ease-in;
 	animation-timing-function: linear;
   animation-duration: 1.5s;
 }

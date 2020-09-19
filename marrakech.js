@@ -200,7 +200,7 @@ addCarpetOnBoard: function(carpet, animation){
 
   if(animation){
     this.placeOnObject(carpetId, 'overall_player_board_'+ carpet.pId );
-    this.slideToObjectPos(carpetId, squareId, horiz? 10 : 5, horiz? 5 : 10, 1000).play();
+    this.slideToObjectPos(carpetId, squareId, 0, 0, 1000).play();
   } else {
     this.placeOnObjectPos(carpetId, squareId, horiz? 40 : 0, horiz? 0 : 40);
   }
@@ -268,7 +268,6 @@ notif_rollDice: function(n){
   if(n.args.face == 0)
     dojo.attr('dice', 'data-show', '0');
   else {
-    dojo.attr('dice', 'data-show', n.args.face);
     dojo.addClass("dice", "roll");
     setTimeout( () => {
       dojo.attr('dice', 'data-show', n.args.face);
