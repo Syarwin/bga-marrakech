@@ -270,6 +270,8 @@ notif_rollDice: function(n){
   else {
     dojo.addClass("dice", "roll");
     setTimeout( () => {
+      dojo.removeClass("dice", "roll");
+      $('dice').offsetWidth;
       dojo.attr('dice', 'data-show', n.args.face);
       dojo.removeClass("dice", "roll");
     }, 1500);

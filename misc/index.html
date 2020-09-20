@@ -1,5 +1,12 @@
 <html>
 	<head>
+<script type="text/javascript">
+setTimeout( () => {
+	document.getElementById("dice").className = "";
+	document.getElementById("dice").offsetWidth;
+	document.getElementById("dice").setAttribute("data-show", "6");
+}, 2000);
+</script>
 <style type="text/css">
 .camera{
   width:200px;
@@ -7,21 +14,24 @@
   perspective-origin:50% 50%;
   perspective:500px;
 }
-.dice {
+#dice {
   position:relative;
   width:100%;
   height:100%;
   transform-style:preserve-3d;
  	transform-origin:center center;
-	transition: 3s transform ease-in;
-
+	transition: transform 0.5s;
+	transform: rotateX(-12deg) rotateY(-12deg);
+}
+#dice.roll {
 	animation-timing-function: linear;
 	animation-name: roll;
   animation-duration: 2s;
+	transition: transform 0s;
 }
 
 @keyframes roll {
-  0%   {transform: rotateX(0deg) rotateY(0deg);}
+  0%   {transform: rotateX(-12deg) rotateY(-12deg);}
   10%   {transform: rotateX(187deg) rotateY(-100deg);}
 	20%   {transform: rotateX(-37deg) rotateY(-192deg);}
 	30%   {transform: rotateX(1deg) rotateY(37deg);}
@@ -29,21 +39,39 @@
 	50%   {transform: rotateX(120deg) rotateY(190deg);}
 	60%   {transform: rotateX(350deg) rotateY(3deg);}
   80%   {transform: rotateX(26deg) rotateY(-181deg);}
-  100%   {transform: rotateX(-1deg) rotateY(12deg);}
+  100%   {transform: rotateX(-12deg) rotateY(-12deg);}
 }
 
-.dice div{
+#dice > div{
   position:absolute;
 	top:60px;
 	left:60px;
   width:80px;
   height:80px;
-	backface-visibility:hidden;
-	background-image:url("../img/marrakech_die.png");
-	background-size:cover;
-	background-color:#c3945e;
+	transform-style: preserve-3d;
 }
 
+#dice > div > div {
+  position:absolute;
+	top:0px;
+	left:0px;
+  width:80px;
+  height:80px;
+	backface-visibility:hidden;
+	border-radius:20px;
+}
+
+#dice > div > div:first-child {
+	background-image:url("../img/marrakech_die.png");
+	background-size:cover;
+	background-color:#cba671;
+}
+
+#dice > div > div:last-child {
+	backface-visibility:hidden;
+	transform:rotateY(180deg);
+	background-color:#c3945e;
+}
 
 .face1  { transform: rotateY(  0deg) translateZ(40px); }
 .face2  { transform: rotateY( 90deg) translateZ(40px); }
@@ -53,20 +81,20 @@
 .face6  { transform: rotateX(-90deg) translateZ(40px); }
 
 
-.face1 { background-position:0% 0; }
-.face2 { background-position:20% 0; }
-.face3 { background-position:100% 0; }
-.face4 { background-position:40% 0; }
-.face5 { background-position:60% 0; }
-.face6 { background-position:80% 0; }
+.face1 div:first-child { background-position:0% 0; }
+.face2 div:first-child { background-position:20% 0; }
+.face3 div:first-child { background-position:100% 0; }
+.face4 div:first-child { background-position:40% 0; }
+.face5 div:first-child { background-position:60% 0; }
+.face6 div:first-child { background-position:80% 0; }
 
 
-.dice[data-show='1'] { transform:rotateX(0deg) rotateY(0deg); }
-.dice[data-show='2'] { transform:rotateX(0deg) rotateY(-90deg); }
-.dice[data-show='3'] { transform:rotateX(0deg) rotateY(180deg); }
-.dice[data-show='4'] { transform:rotateX(0deg) rotateY(90deg); }
-.dice[data-show='5'] { transform:rotateX(-90deg) rotateY(0deg); }
-.dice[data-show='6'] { transform:rotateX(90deg) rotateY(0deg); }
+#dice[data-show='1'] { transform:rotateX(-12deg) rotateY(-12deg); }
+#dice[data-show='2'] { transform:rotateX(-12deg) rotateY(-102deg); }
+#dice[data-show='3'] { transform:rotateX(-12deg) rotateY(168deg); }
+#dice[data-show='4'] { transform:rotateX(-12deg) rotateY(78deg); }
+#dice[data-show='5'] { transform:rotateY(-12deg) rotateX(-102deg) ; }
+#dice[data-show='6'] { transform:rotateY(-12deg) rotateX(-102deg); }
 
 /*
 .dice div::before {
@@ -124,16 +152,15 @@
 <body>
 
 <div class="camera">
-    <div class="dice" data-show="3">
-          <div class="face1"></div>
-          <div class="face2"></div>
-          <div class="face3"></div>
-          <div class="face4"></div>
-          <div class="face5"></div>
-          <div class="face6"></div>
+    <div id="dice" class="roll" data-show="0">
+          <div class="face1"><div></div><div></div></div>
+          <div class="face2"><div></div><div></div></div>
+          <div class="face3"><div></div><div></div></div>
+          <div class="face4"><div></div><div></div></div>
+          <div class="face5"><div></div><div></div></div>
+          <div class="face6"><div></div><div></div></div>
     </div>
 </div>
-
 
 
 </body>

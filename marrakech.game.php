@@ -69,6 +69,7 @@ class Marrakech extends Table
 	 */
 	protected function getAllDatas() {
 		return [
+			'players' => 	self::getCollectionFromDb("SELECT player_id id, player_score score, player_color, player_name FROM player "),
 			'bplayers' => PlayerManager::getUiData(),
 			'assam' => MarrakechAssam::get(),
 			'carpets' => MarrakechBoard::getUiData(),
