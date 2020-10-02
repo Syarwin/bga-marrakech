@@ -47,7 +47,7 @@ $gameinfos = [
   ],
 
   'tags' => [ 2, 11, 206 ],
-
+  'enable_3d' => false,
 
   //////// BGA SANDBOX ONLY PARAMETERS (DO NOT MODIFY)
   'is_sandbox' => false,

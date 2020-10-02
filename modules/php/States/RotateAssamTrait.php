@@ -12,8 +12,8 @@ trait RotateAssamTrait {
   function rotateAssam($delta)
   {
     self::checkAction('adjust');
-    \MKH\NotificationManager::rotate($delta);
-    \MKH\Assam::rotate($delta);
+    NotificationManager::rotate($delta);
+    Assam::rotate($delta);
     $newState = self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN? "nextPlayer" : "moveAssam";
     $this->gamestate->nextState($newState);
   }

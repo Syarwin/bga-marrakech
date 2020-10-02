@@ -21,13 +21,13 @@ trait TurnsTrait {
 		} else {
 			// Active next player
 			$pId = $next ? $this->activeNextPlayer() : $this->getActivePlayerId();
-			if (\MKH\PlayerManager::isEliminated($pId)) {
+			if (PlayerManager::isEliminated($pId)) {
 	      $this->stNextPlayer();
 	      return;
 	    }
 
 			self::giveExtraTime($pId);
-			\MKH\StatManager::newTurn($pId);
+			StatManager::newTurn($pId);
 			$this->gamestate->nextState("startTurn");
 		}
 	}
@@ -37,7 +37,7 @@ trait TurnsTrait {
 	 */
 	function isEndOfGame()
 	{
-		return \MKH\PlayerManager::getPlayersLeft() == 1 || \MKH\PlayerManager::getCarpetsLeft() == 0;
+		return PlayerManager::getPlayersLeft() == 1 || PlayerManager::getCarpetsLeft() == 0;
 	}
 
 
@@ -60,7 +60,7 @@ trait TurnsTrait {
   {
     $pId = $this->getActivePlayerId();
     $this->activeNextPlayer();
-    \MKH\PlayerManager::eliminate($pId);
+    PlayerManager::eliminate($pId);
     $this->stNextPlayer(false);
   }
 }

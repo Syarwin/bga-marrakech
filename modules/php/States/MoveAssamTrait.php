@@ -15,9 +15,9 @@ trait MoveAssamTrait {
 		$face = bga_rand(1, 6);
  		$this->setGameStateValue('diceFace', $face);
  		$roll = $this->marrakechDice[$face];
-		\MKH\NotificationManager::rollDice($face, $roll);
-		\MKH\Assam::move($roll);
-		$eliminated = \MKH\Board::payTaxes();
+		NotificationManager::rollDice($face, $roll);
+		Assam::move($roll);
+		$eliminated = Board::payTaxes();
 
 		$this->gamestate->nextState($eliminated? "eliminate" : "placeCarpet");
 	}
