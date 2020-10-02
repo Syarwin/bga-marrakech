@@ -1,6 +1,7 @@
 <?php
+namespace MKH;
 
-class MarrakechAssam extends APP_GameClass
+class Assam extends \APP_DbObject
 {
   public static function init(){
     self::DbQuery("INSERT INTO assam (x,y,dir) VALUES (4,4,2)");

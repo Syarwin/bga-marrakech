@@ -1,6 +1,7 @@
 <?php
+namespace MKH;
 
-class MarrakechBoard extends APP_GameClass
+class Board extends \APP_DbObject
 {
   public static function getUiData(){
     return self::getObjectListFromDb("SELECT * FROM carpets ORDER BY id ASC");
@@ -83,8 +84,8 @@ class MarrakechBoard extends APP_GameClass
    */
   public static function moveInDir($pos, $dir){
     return [
-      'x' => $pos['x'] + MarrakechAssam::$deltas[$dir]['x'],
-      'y' => $pos['y'] + MarrakechAssam::$deltas[$dir]['y'],
+      'x' => $pos['x'] + Assam::$deltas[$dir]['x'],
+      'y' => $pos['y'] + Assam::$deltas[$dir]['y'],
     ];
   }
 
@@ -103,7 +104,7 @@ class MarrakechBoard extends APP_GameClass
    * getPossiblePlaces: return list of possible locations for placing a carpet
    */
   function getPossiblePlaces(){
-    $assam = MarrakechAssam::get();
+    $assam = Assam::get();
     $places = [];
     for($i = 0; $i < 4; $i++){
       $pos1 = self::moveInDir($assam, $i);
@@ -122,7 +123,7 @@ class MarrakechBoard extends APP_GameClass
 
     // Keep only valid carpet places : cannot entirely cover opponent in one go
 		$board = self::getBoard();
-    $pId = Marrakech::$instance->getActivePlayerId();
+    $pId = PlayerManager::getActivePlayerId();
     Utils::filter($places, function($s) use ($board, $pId){
       return is_null($board[$s['x1']][$s['y1']]) || is_null($board[$s['x2']][$s['y2']]) // Either one of the two spot is empty
         || $board[$s['x1']][$s['y1']]['id'] != $board[$s['x2']][$s['y2']]['id'] // Either the rug are not the same on the two spot
@@ -135,9 +136,9 @@ class MarrakechBoard extends APP_GameClass
 
 
   public static function payTaxes(){
-    $pId = Marrakech::$instance->getActivePlayerId();
+    $pId = PlayerManager::getActivePlayerId();
     $board = self::getBoard();
-    $assam = MarrakechAssam::get();
+    $assam = Assam::get();
     $cell = $board[$assam['x']][$assam['y']];
     $player = PlayerManager::getById($pId);
 

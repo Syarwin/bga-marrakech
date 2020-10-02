@@ -16,11 +16,37 @@
  *
  */
 
+use MKH\Assam;
+use MKH\Board;
+use MKH\PlayerManager;
+use MKH\NotificationManager;
+use MKH\StatManager;
+use MKH\Utils;
+
+$swdNamespaceAutoload = function ($class) {
+   $classParts = explode('\\', $class);
+   if ($classParts[0] == 'MKH') {
+       array_shift($classParts);
+       $file = dirname(__FILE__) . "/modules/php/" . implode(DIRECTORY_SEPARATOR, $classParts) . ".php";
+       if (file_exists($file)) {
+           require_once($file);
+       }
+   }
+};
+spl_autoload_register($swdNamespaceAutoload, true, true);
+
 require_once APP_GAMEMODULE_PATH . 'module/table/table.game.php';
+
 
 class Marrakech extends Table
 {
+	use MKH\States\TurnsTrait;
+	use MKH\States\RotateAssamTrait;
+	use MKH\States\MoveAssamTrait;
+	use MKH\States\PlaceCarpetTrait;
+
 	public static $instance = null;
+	public static function get(){ return self::$instance; }
 	function __construct()
 	{
 		parent::__construct();
@@ -43,23 +69,20 @@ class Marrakech extends Table
 	protected function setupNewGame($players, $options = [])
 	{
 		// Init Assam position
-		MarrakechAssam::init();
+		MKH\Assam::init();
 
 		// Create and give each player 30 dirhams
-		PlayerManager::setupNewGame($players);
+		MKH\PlayerManager::setupNewGame($players);
 
 		// Init game statistics
-		StatManager::setupNewGame();
-
+		MKH\StatManager::setupNewGame();
 		// Init dice face
 		self::setGameStateInitialValue('diceFace', 0);
 
-		// Activate first player (which is in general a good idea :) )
+		// Activate first player
 		$pId = $this->activeNextPlayer();
-		StatManager::newTurn($pId);
+		MKH\StatManager::newTurn($pId);
 	}
-
-
 
 
 	/*
@@ -70,9 +93,9 @@ class Marrakech extends Table
 	protected function getAllDatas() {
 		return [
 			'players' => 	self::getCollectionFromDb("SELECT player_id id, player_score score, player_color, player_name FROM player "),
-			'bplayers' => PlayerManager::getUiData(),
-			'assam' => MarrakechAssam::get(),
-			'carpets' => MarrakechBoard::getUiData(),
+			'bplayers' => MKH\PlayerManager::getUiData(),
+			'assam' => MKH\Assam::get(),
+			'carpets' => MKH\Board::getUiData(),
 			'dice' => $this->getGameStateValue('diceFace'),
 		];
 	}
@@ -85,147 +108,13 @@ class Marrakech extends Table
 	{
 		// Compute total carpets depending on #players, remeaning players
 		$carpetPerPlayer = [0, 0, 24, 15, 12];
-		$carpetsTotal = PlayerManager::getPlayersLeft() * $carpetPerPlayer[self::getPlayersNumber()];
+		$carpetsTotal = MKH\PlayerManager::getPlayersLeft() * $carpetPerPlayer[self::getPlayersNumber()];
 
 		// Get carpets left
-		$carpetsLeft = PlayerManager::getCarpetsLeft();
+		$carpetsLeft = MKH\PlayerManager::getCarpetsLeft();
 
 		return (($carpetsTotal - intval($carpetsLeft)) * 100) / $carpetsTotal;
 	}
-
-
-
-
-	///////////////////////////////////////////////////////
-	//////////// Next player / start of turn   ////////////
-	///////////////////////////////////////////////////////
-
-	/*
-	 * stNextPlayer : go to the next (non eliminated) player
-	 */
-	function stNextPlayer($next = true)
-	{
-		if ($this->isEndOfGame()) {
-			$this->gamestate->nextState("endGame");
-		} else {
-			// Active next player
-			$pId = $next ? $this->activeNextPlayer() : $this->getActivePlayerId();
-			if (PlayerManager::isEliminated($pId)) {
-	      $this->stNextPlayer();
-	      return;
-	    }
-
-			self::giveExtraTime($pId);
-			StatManager::newTurn($pId);
-			$this->gamestate->nextState("startTurn");
-		}
-	}
-
-	/*
-	 * isEndOfGame : ends the game whenever only 1 players is left, or when all the rugs where placed
-	 */
-	function isEndOfGame()
-	{
-		return PlayerManager::getPlayersLeft() == 1 || PlayerManager::getCarpetsLeft() == 0;
-	}
-
-
-
-	/*
-   * stStartOfTurn: is called at the start of a player's turn and go to right step according to variant
-   */
-	function stStartOfTurn()
-	{
-		// Rotate assam at the beginning/end of turn depending on game option
-		$newState = self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN? "moveAssam" : "rotateAssam";
-		$this->gamestate->nextState($newState);
-	}
-
-
-	/*
-   * stEliminatePlayer: this function is called when the active player is eliminated
-   */
-  public function stEliminatePlayer()
-  {
-    $pId = $this->getActivePlayerId();
-    $this->activeNextPlayer();
-    PlayerManager::eliminate($pId);
-    $this->stNextPlayer(false);
-  }
-
-
-	///////////////////////////////////////
-	//////////// Rotate Assam  ////////////
-	///////////////////////////////////////
-	function rotateAssam($delta)
-	{
-		self::checkAction('adjust');
-		NotificationManager::rotate($delta);
-		MarrakechAssam::rotate($delta);
-		$newState = self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN? "nextPlayer" : "moveAssam";
-		$this->gamestate->nextState($newState);
-	}
-
-
-	/////////////////////////////////////
-	//////////// Move Assam  ////////////
-	/////////////////////////////////////
-	function rollDice()
-	{
-		// Roll die and move Assam
-		$face = bga_rand(1, 6);
- 		$this->setGameStateValue('diceFace', $face);
- 		$roll = $this->marrakechDice[$face];
-		NotificationManager::rollDice($face, $roll);
-		MarrakechAssam::move($roll);
-		$eliminated = MarrakechBoard::payTaxes();
-
-		$this->gamestate->nextState($eliminated? "eliminate" : "placeCarpet");
-	}
-
-
-
-	/////////////////////////////////////
-	//////////// Place carpet  //////////
-	/////////////////////////////////////
-	function argPlaceCarpets()
-	{
-		return [
-			'places' => MarrakechBoard::getPossiblePlaces()
-		];
-	}
-
-	function placeCarpet($x1, $y1, $x2, $y2)
-	{
-		self::checkAction('placeCarpet');
-
-		// Security : check that the coordinates are not falsified
-	 	$places = MarrakechBoard::getPossiblePlaces();
-		Utils::filter($places, function($place) use ($x1,$y1,$x2,$y2){
-			return $x1 == $place['x1'] && $y1 == $place['y1']
-					&& $x2 == $place['x2'] && $y2 == $place['y2'];
-		});
-		if (empty($places)){
-			throw new BgaUserException( self::_("You can not place a carpet here") );
-		}
-
-		// Compute position and direction of carpet
-		$x = min($x1, $x2);
-		$y = min($y1, $y2);
-		$orientation = $x1 == $x2? 'v' : 'h';
-
-		// Place carpet
-		$pId = self::getActivePlayerId();
-		PlayerManager::placeCarpet($pId, $x, $y, $orientation);
-
-		// Update score and UI
-		PlayerManager::updateScores();
-		PlayerManager::updateUi();
-
-		$newState = (self::getGameStateValue('RotateAssam') == ROTATE_AT_END_OF_TURN && !$this->isEndOfGame())? "rotateAssam" : "nextPlayer";
-		$this->gamestate->nextState($newState);
-	}
-
 
 	////////////////////////////////////
 	////////////   Zombie   ////////////

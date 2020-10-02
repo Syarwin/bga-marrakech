@@ -1,16 +1,17 @@
 <?php
+namespace MKH;
+use Marrakech;
 
 /*
  * PlayerManager: all utility functions concerning players
  */
 
-//require_once('MarrakechPlayer.class.php');
 
-class PlayerManager extends APP_GameClass
+class PlayerManager extends  \APP_DbObject
 {
 	public static function setupNewGame($players)	{
 		self::DbQuery('DELETE FROM player');
-		$gameInfos = Marrakech::$instance->getGameinfos();
+		$gameInfos = Marrakech::get()->getGameinfos();
     $colors = $gameInfos['player_colors'];
     $sql = 'INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar, player_score, player_score_aux, money) VALUES ';
 
@@ -25,8 +26,8 @@ class PlayerManager extends APP_GameClass
 		}
 
 		self::DbQuery($sql . implode($values, ','));
-    Marrakech::$instance->reattributeColorsBasedOnPreferences($players,	$gameInfos['player_colors']);
-		Marrakech::$instance->reloadPlayersBasicInfos();
+    Marrakech::get()->reattributeColorsBasedOnPreferences($players,	$gameInfos['player_colors']);
+		Marrakech::get()->reloadPlayersBasicInfos();
 
     self::distributeCarpets($players);
 	}
@@ -75,6 +76,9 @@ class PlayerManager extends APP_GameClass
 		return self::getUniqueValueFromDB("SELECT SUM(carpet_1) + SUM(carpet_2) + SUM(carpet_3) + SUM(carpet_4) as TOTAL FROM player");
 	}
 
+	public static function getActivePlayerId(){
+		return Marrakech::get()->getActivePlayerId();
+	}
 
 
   public static function isEliminated($pId){
@@ -134,7 +138,7 @@ class PlayerManager extends APP_GameClass
     foreach ($players as &$player)
       $player['carpet_score'] = 0;
 
-    $board = MarrakechBoard::getBoard();
+    $board = Board::getBoard();
     for($x = 1; $x <= 7; $x++) {
       for($y = 1; $y <= 7; $y++) {
         $carpet = $board[$x][$y];
@@ -156,7 +160,7 @@ class PlayerManager extends APP_GameClass
 
 	public static function eliminate($pId){
 		self::DbQuery("UPDATE player SET money = 0, player_score = 0, player_score_aux = 0, carpet_1 = 0, carpet_2 = 0, carpet_3 = 0, carpet_4 = 0, next_carpet = 0 WHERE player_id = $pId");
-		Marrakech::$instance->eliminatePlayer($pId);
+		Marrakech::get()->eliminatePlayer($pId);
 		self::updateUi();
 	}
 }

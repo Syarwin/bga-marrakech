@@ -227,7 +227,8 @@
   width:80px;
   height:80px;
 	backface-visibility:hidden;
-	border-radius:20px;
+  -webkit-backface-visibility: hidden;
+  border-radius:20px;
 }
 
 #dice > div > div:first-child {
@@ -238,6 +239,7 @@
 
 #dice > div > div:last-child {
 	backface-visibility:hidden;
+  -webkit-backface-visibility: hidden;
 	transform:rotateY(180deg);
 	background-color:#c3945e;
 }

@@ -1,21 +1,23 @@
 <?php
+namespace MKH;
+use Marrakech;
 
-class StatManager extends APP_GameClass
+class StatManager extends \APP_DbObject
 {
   protected static function init($type, $name, $value = 0){
-    Marrakech::$instance->initStat($type, $name, $value);
+    Marrakech::get()->initStat($type, $name, $value);
   }
 
   protected static function inc($name, $player = null, $value = 1){
-    Marrakech::$instance->incStat($value, $name, $player);
+    Marrakech::get()->incStat($value, $name, $player);
   }
 
   protected static function get($name, $player = null){
-    Marrakech::$instance->getStat($name, $player);
+    Marrakech::get()->getStat($name, $player);
   }
 
   protected static function set($value, $name, $player = null){
-    Marrakech::$instance->setStat($value, $name, $player);
+    Marrakech::get()->setStat($value, $name, $player);
   }
 
 
@@ -51,7 +53,7 @@ class StatManager extends APP_GameClass
   }
 
   public static function placeCarpet($pId, $type, $pos){
-    $currentZone = MarrakechBoard::getTaxesZone($pId, $type, $pos);
+    $currentZone = Board::getTaxesZone($pId, $type, $pos);
     $size = count($currentZone);
 
     $tableLargestZone = self::get('table_largest_carpet_zone');

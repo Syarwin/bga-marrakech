@@ -108,7 +108,7 @@ $machinestates = [
       'action' => 'stEliminatePlayer',
       'transitions' => [
         'startTurn' => ST_START_OF_TURN,
-        'endgame' => ST_GAME_END,
+        'endGame' => ST_GAME_END,
       ],
     ],
 
