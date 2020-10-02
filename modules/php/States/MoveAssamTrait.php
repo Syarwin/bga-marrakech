@@ -4,6 +4,7 @@ namespace MKH\States;
 use Marrakech;
 use MKH\NotificationManager;
 use MKH\Assam;
+use MKH\Board;
 
 /////////////////////////////////////
 //////////// Move Assam  ////////////
