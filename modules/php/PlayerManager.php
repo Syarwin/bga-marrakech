@@ -33,12 +33,17 @@ class PlayerManager extends  \APP_DbObject
     self::distributeCarpets($players);
 	}
 
+
+  // VERY UGLY BUT WORKS....
   public static function getNewType($carpetType){
     $players = Marrakech::get()->loadPlayersBasicInfos();
 
     if(count($players) == 2){
       $order = ["ff0000" => 1, "0000ff" => 2];
       $player = array_values($players)[0];
+      if(!isset($order[$player['player_color']])) // TODO remove in future, only for backward compatibility
+        return $carpetType;
+
       if($order[$player['player_color']] != $player['player_no']){
         return $carpetType > 2? ($carpetType - 2) : ($carpetType + 2);
       } else {
@@ -46,10 +51,36 @@ class PlayerManager extends  \APP_DbObject
       }
     } else {
       $order = ["ff0000" => 2, "0000ff" => 4, "ffa500" => 1, "f07f16" => 3];
+
+      // TODO remove in future, only for backward compatibility
       foreach($players as $player){
-        if($carpetType == $player['player_no'] )
-          return $order[$player["player_color"]];
+        if(!isset($order[$player['player_color']]))
+          return $carpetType;
       }
+
+      $reorder = [];
+      foreach($players as $player){
+        $reorder[$player['player_no']] = $order[$player["player_color"]];
+      }
+
+      if(count($players) == 3){
+        $missingIndex = null;
+        $seen = [0, false, false, false, false];
+        for($i = 1; $i <= 4; $i++){
+          if(!isset($reorder[$i]))
+            $missingIndex = $i;
+          else
+            $seen[$reorder[$i]] = true;
+        }
+        for($i = 1; $i <= 4; $i++){
+          if(!$seen[$i]){
+            $reorder[$missingIndex] = $i;
+          }
+        }
+      }
+
+
+      return $reorder[$carpetType];
     }
   }
 
