@@ -26,11 +26,32 @@ class PlayerManager extends  \APP_DbObject
 		}
 
 		self::DbQuery($sql . implode($values, ','));
-    Marrakech::get()->reattributeColorsBasedOnPreferences($players,	$gameInfos['player_colors']);
+    $colors = count($players) == 2? ["ff0000", "0000ff"] : ["ff0000", "0000ff", "ffa500", "f07f16"]; // Red, blue, yellow, orange/brown
+    Marrakech::get()->reattributeColorsBasedOnPreferences($players,	$colors);
 		Marrakech::get()->reloadPlayersBasicInfos();
 
     self::distributeCarpets($players);
 	}
+
+  public static function getNewType($carpetType){
+    $players = Marrakech::get()->loadPlayersBasicInfos();
+
+    if(count($players) == 2){
+      $order = ["ff0000" => 1, "0000ff" => 2];
+      $player = array_values($players)[0];
+      if($order[$player['player_color']] != $player['player_no']){
+        return $carpetType > 2? ($carpetType - 2) : ($carpetType + 2);
+      } else {
+        return $carpetType;
+      }
+    } else {
+      $order = ["ff0000" => 2, "0000ff" => 4, "ffa500" => 1, "f07f16" => 3];
+      foreach($players as $player){
+        if($carpetType == $player['player_no'] )
+          return $order[$player["player_color"]];
+      }
+    }
+  }
 
   public static function distributeCarpets($players){
     foreach(array_keys($players) as $i => $pId) {
@@ -53,8 +74,29 @@ class PlayerManager extends  \APP_DbObject
 
 
   public static function getUiData(){
-    return self::getObjectListFromDb("SELECT player_id id, player_eliminated eliminated, player_score score,
+    $players = self::getObjectListFromDb("SELECT player_id id, player_eliminated eliminated, player_score score,
       money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player");
+
+    // New order
+    $reorder = [];
+    for($i = 1; $i <= 4; $i++){
+      $reorder[$i] = self::getNewType($i);
+    }
+
+    // Update info
+    foreach($players as &$player){
+      $player['carpet_type'] = $reorder[$player['carpet_type']];
+
+      $carpets = [];
+      for($i = 1; $i <= 4; $i++){
+        $carpets[$i] = $player['carpet_'.$i];
+      }
+      for($i = 1; $i <= 4; $i++){
+        $player['carpet_'.$i] = $carpets[$reorder[$i]];
+      }
+    }
+
+    return $players;
   }
 
 	public static function updateUi(){

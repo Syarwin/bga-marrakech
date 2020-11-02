@@ -4,7 +4,11 @@ namespace MKH;
 class Board extends \APP_DbObject
 {
   public static function getUiData(){
-    return self::getObjectListFromDb("SELECT * FROM carpets ORDER BY id ASC");
+    $carpets = self::getObjectListFromDb("SELECT * FROM carpets ORDER BY id ASC");
+    foreach ($carpets as &$carpet){
+      $carpet['type'] = PlayerManager::getNewType($carpet['type']);
+    }
+    return $carpets;
   }
 
 

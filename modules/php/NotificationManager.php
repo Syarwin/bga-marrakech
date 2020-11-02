@@ -50,7 +50,7 @@ class NotificationManager extends \APP_DbObject
       'x' => $x,
       'y' => $y,
       'orientation' => $orientation,
-      'type' => $type,
+      'type' => PlayerManager::getNewType($type),
     ]);
   }
 
