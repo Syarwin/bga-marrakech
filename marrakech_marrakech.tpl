@@ -1,5 +1,5 @@
 {OVERALL_GAME_HEADER}
-<div class="container">
+<div id="marrakech_container">
 
   <div id="board">
     <!-- BEGIN square -->

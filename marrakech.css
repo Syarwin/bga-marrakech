@@ -13,7 +13,8 @@
  *
  */
 
-.container {
+#marrakech_container {
+  width: 100%;
   position: relative;
   display: flex;
   flex-wrap: wrap;
@@ -32,113 +33,172 @@
   margin: 5px;
 }
 
-
-
 #board {
   position: relative;
   width: 720px;
   height: 720px;
-  background-image: url('img/marrakech_board_sat_85.jpg');
+  background-image: url("img/marrakech_board.jpg");
+  background-size: 100%;
+  padding: 33px 31px 31px 31px;
   display: grid;
-  grid-template-columns: repeat(9,1fr);
-  grid-template-rows: repeat(9,1fr);
+  grid-template-columns: repeat(9, 1fr);
+  grid-template-rows: repeat(9, 1fr);
 }
 
 #board .square {
   width: 80px;
   height: 80px;
-  border-radius:20px;
-  z-index:100;
+  border-radius: 20px;
+  z-index: 100;
+  position: relative;
 }
 
 #board .square.selectable {
-  cursor:pointer;
-  background-color:rgba(255,255,255,0.4);
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.4);
 }
 #board .square.selectable:hover {
-  background-color:rgba(255,255,255,0.6);
+  background-color: rgba(255, 255, 255, 0.6);
 }
 
 #board .square.selected {
-  background-color:rgba(0,200,0,0.7);
+  background-color: rgba(0, 200, 0, 0.7);
   border-radius: 0px;
   box-shadow: 1px 1px 5px -1px black;
 }
 
 .coin {
-  width:40px;
-  height:40px;
-  background-image:url("img/coin.png");
-  background-position:center center;
-  z-index:1000;
+  width: 40px;
+  height: 40px;
+  background-image: url("img/coin.png");
+  background-size: 100%;
+  background-position: center center;
+  z-index: 1000;
   background-repeat: no-repeat;
 }
-
 
 #assam {
   position: absolute;
   width: 80px;
   height: 80px;
-  background-image: url('img/marrakech_assam.png');
+  background-image: url("img/marrakech_assam.png");
+  background-size: 500%;
   z-index: 500;
 }
-#assam[data-dir="0"] { background-position: 75% 0%; }
-#assam[data-dir="1"] { background-position: 50% 0%; }
-#assam[data-dir="2"] { background-position: 25% 0%; }
-#assam[data-dir="3"] { background-position: 100% 0%;}
+#assam[data-dir="0"] {
+  background-position: 75% 0%;
+}
+#assam[data-dir="1"] {
+  background-position: 50% 0%;
+}
+#assam[data-dir="2"] {
+  background-position: 25% 0%;
+}
+#assam[data-dir="3"] {
+  background-position: 100% 0%;
+}
 
 .next_direction {
   position: absolute;
   display: none;
   width: 80px;
   height: 80px;
-  background-image: url('img/marrakech_arrows.png');
+  background-image: url("img/marrakech_arrows.png");
   z-index: 500;
   cursor: pointer;
 }
 
-#next_direction_S { background-position: 0px 0px; }
-#next_direction_E { background-position: -80px 0px; }
-#next_direction_N { background-position: -160px 0px; }
-#next_direction_W { background-position: -240px 0px; }
+#next_direction_S {
+  background-position: 0px 0px;
+}
+#next_direction_E {
+  background-position: -80px 0px;
+}
+#next_direction_N {
+  background-position: -160px 0px;
+}
+#next_direction_W {
+  background-position: -240px 0px;
+}
 
 .carpet {
   position: absolute;
-  background-image: url('img/marrakech_rugs.png');
+  background-image: url("img/marrakech_rugs.jpg");
+  background-size: 320px;
   border: 1px #333 solid;
   z-index: 10;
   box-sizing: border-box;
-  box-shadow:4px 4px 6px -4px #222;
+  box-shadow: 4px 4px 6px -4px #222;
 }
 
-.carpet_h { width: 160px; height: 80px; }
-.carpet_v { width: 80px; height: 160px; }
+.carpet_h {
+  width: 160px;
+  height: 80px;
+}
+.carpet_v {
+  width: 80px;
+  height: 160px;
+}
 
-.carpet_yellow_h, .carpet_1_h { background-position: 0px 0px; }
-.carpet_yellow_v, .carpet_1_v { background-position: 0px -160px; }
-.carpet_red_h, .carpet_2_h { background-position: -160px 0px; }
-.carpet_red_v, .carpet_2_v { background-position: -80px -160px; }
-.carpet_orange_h, .carpet_3_h { background-position: 0px -80px; }
-.carpet_orange_v, .carpet_3_v { background-position: -160px -160px; }
-.carpet_blue_h, .carpet_4_h { background-position: -160px -80px; }
-.carpet_blue_v, .carpet_4_v { background-position: -240px -160px; }
+.carpet_yellow_h,
+.carpet_1_h {
+  background-position: 0% 0%;
+}
+.carpet_yellow_v,
+.carpet_1_v {
+  background-position: 0% 100%;
+}
+
+.carpet_red_h,
+.carpet_2_h {
+  background-position: 100% 0%;
+}
+.carpet_red_v,
+.carpet_2_v {
+  background-position: 33.3333% 100%;
+}
+.carpet_orange_h,
+.carpet_3_h {
+  background-position: 0% 33.33333%;
+}
+.carpet_orange_v,
+.carpet_3_v {
+  background-position: 66.6666% 100%;
+}
+.carpet_blue_h,
+.carpet_4_h {
+  background-position: 100% 33.33333%;
+}
+.carpet_blue_v,
+.carpet_4_v {
+  background-position: 100% 100%;
+}
 
 .carpet_info {
   display: inline-block;
-  background-image: url('img/marrakech_rugs_small.png');
+  background-image: url("img/marrakech_rugs.jpg");
+  background-size: 200%;
   border: 1px #333 solid;
   width: 60px;
   height: 30px;
 }
 
-#carpet_info_1 { background-position: 0px 0px; }
-#carpet_info_2 { background-position: -60px 0px; }
-#carpet_info_3 { background-position: 0px -30px; }
-#carpet_info_4 { background-position: -60px -30px; }
+#carpet_info_1 {
+  background-position: 0px 0px;
+}
+#carpet_info_2 {
+  background-position: -60px 0px;
+}
+#carpet_info_3 {
+  background-position: 0px -30px;
+}
+#carpet_info_4 {
+  background-position: -60px -30px;
+}
 
 .next_carpet {
   position: absolute;
-  background-image: url('img/checked.png');
+  background-image: url("img/checked.png");
   width: 16px;
   height: 16px;
 }
@@ -146,9 +206,9 @@
 .money {
   position: relative;
   display: inline-block;
-  background-image: url('img/money.png');
+  background-image: url("img/money.png");
   width: 60px;
-  height: 30px;
+  height: 40px;
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
@@ -163,106 +223,162 @@
   text-align: right;
   font-weight: bold;
   font-size: 25px;
-  text-shadow: 1px 1px 5px white, -1px -1px 5px white;
+  text-shadow:
+    1px 1px 5px white,
+    -1px -1px 5px white;
 }
 
-.tax_inc { color: green; }
-.tax_dec { color: red; }
-
-
+.tax_inc {
+  color: green;
+}
+.tax_dec {
+  color: red;
+}
 
 #dice-container {
-  width:200px;
-  height:200px;
-  perspective-origin:50% 50%;
-  perspective:500px;
+  width: 200px;
+  height: 200px;
+  perspective-origin: 50% 50%;
+  perspective: 500px;
   margin-left: 10px;
   margin-right: 10px;
 }
 
 #dice {
-  position:relative;
-  width:100%;
-  height:100%;
-  transform-style:preserve-3d;
- 	transform-origin:center center;
-	transition: transform 0.5s;
-	transform: rotateX(-12deg) rotateY(-12deg);
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: center center;
+  transition: transform 0.5s;
+  transform: rotateX(-12deg) rotateY(-12deg);
 }
 #dice.roll {
-	animation-timing-function: linear;
-	animation-name: roll;
+  animation-timing-function: linear;
+  animation-name: roll;
   animation-duration: 2s;
-	transition: transform 0s;
+  transition: transform 0s;
 }
 #dice.clickable {
-  cursor:pointer;
+  cursor: pointer;
 }
 
 @keyframes roll {
-  0%   {transform: rotateX(-12deg) rotateY(-12deg);}
-  10%   {transform: rotateX(187deg) rotateY(-100deg);}
-	20%   {transform: rotateX(-37deg) rotateY(-192deg);}
-	30%   {transform: rotateX(1deg) rotateY(37deg);}
-	40%   {transform: rotateX(-192deg) rotateY(-231deg);}
-	50%   {transform: rotateX(120deg) rotateY(190deg);}
-	60%   {transform: rotateX(350deg) rotateY(3deg);}
-  80%   {transform: rotateX(26deg) rotateY(-181deg);}
-  100%   {transform: rotateX(-12deg) rotateY(-12deg);}
+  0% {
+    transform: rotateX(-12deg) rotateY(-12deg);
+  }
+  10% {
+    transform: rotateX(187deg) rotateY(-100deg);
+  }
+  20% {
+    transform: rotateX(-37deg) rotateY(-192deg);
+  }
+  30% {
+    transform: rotateX(1deg) rotateY(37deg);
+  }
+  40% {
+    transform: rotateX(-192deg) rotateY(-231deg);
+  }
+  50% {
+    transform: rotateX(120deg) rotateY(190deg);
+  }
+  60% {
+    transform: rotateX(350deg) rotateY(3deg);
+  }
+  80% {
+    transform: rotateX(26deg) rotateY(-181deg);
+  }
+  100% {
+    transform: rotateX(-12deg) rotateY(-12deg);
+  }
 }
 
-#dice > div{
-  position:absolute;
-	top:60px;
-	left:60px;
-  width:80px;
-  height:80px;
-	transform-style: preserve-3d;
+#dice > div {
+  position: absolute;
+  top: 60px;
+  left: 60px;
+  width: 80px;
+  height: 80px;
+  transform-style: preserve-3d;
 }
 
 #dice > div > div {
-  position:absolute;
-	top:0px;
-	left:0px;
-  width:80px;
-  height:80px;
-	backface-visibility:hidden;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  width: 80px;
+  height: 80px;
+  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-  border-radius:20px;
+  border-radius: 20px;
 }
 
 #dice > div > div:first-child {
-	background-image:url("img/marrakech_die.png");
-	background-size:cover;
-	background-color:#c3945e;
+  background-image: url("img/marrakech_die.png");
+  background-size: cover;
+  background-color: #c3945e;
 }
 
 #dice > div > div:last-child {
-	backface-visibility:hidden;
+  backface-visibility: hidden;
   -webkit-backface-visibility: hidden;
-	transform:rotateY(180deg);
-	background-color:#c3945e;
+  transform: rotateY(180deg);
+  background-color: #c3945e;
 }
 
-.face1  { transform: rotateY(  0deg) translateZ(40px); }
-.face2  { transform: rotateY( 90deg) translateZ(40px); }
-.face3  { transform: rotateY(180deg) translateZ(40px); }
-.face4  { transform: rotateY(-90deg) translateZ(40px); }
-.face5  { transform: rotateX( 90deg) translateZ(40px); }
-.face6  { transform: rotateX(-90deg) translateZ(40px); }
+.face1 {
+  transform: rotateY(0deg) translateZ(40px);
+}
+.face2 {
+  transform: rotateY(90deg) translateZ(40px);
+}
+.face3 {
+  transform: rotateY(180deg) translateZ(40px);
+}
+.face4 {
+  transform: rotateY(-90deg) translateZ(40px);
+}
+.face5 {
+  transform: rotateX(90deg) translateZ(40px);
+}
+.face6 {
+  transform: rotateX(-90deg) translateZ(40px);
+}
 
+.face1 div:first-child {
+  background-position: 0% 0;
+}
+.face2 div:first-child {
+  background-position: 20% 0;
+}
+.face3 div:first-child {
+  background-position: 100% 0;
+}
+.face4 div:first-child {
+  background-position: 40% 0;
+}
+.face5 div:first-child {
+  background-position: 60% 0;
+}
+.face6 div:first-child {
+  background-position: 80% 0;
+}
 
-.face1 div:first-child { background-position:0% 0; }
-.face2 div:first-child { background-position:20% 0; }
-.face3 div:first-child { background-position:100% 0; }
-.face4 div:first-child { background-position:40% 0; }
-.face5 div:first-child { background-position:60% 0; }
-.face6 div:first-child { background-position:80% 0; }
-
-
-#dice[data-show='1'] { transform:rotateX(-12deg) rotateY(-12deg); }
-#dice[data-show='2'] { transform:rotateX(-12deg) rotateY(-102deg); }
-#dice[data-show='3'] { transform:rotateX(-12deg) rotateY(168deg); }
-#dice[data-show='4'] { transform:rotateX(-12deg) rotateY(78deg); }
-#dice[data-show='5'] { transform:rotateY(-12deg) rotateX(-102deg) ; }
-#dice[data-show='6'] { transform:rotateY(-12deg) rotateX(-102deg); }
+#dice[data-show="1"] {
+  transform: rotateX(-12deg) rotateY(-12deg);
+}
+#dice[data-show="2"] {
+  transform: rotateX(-12deg) rotateY(-102deg);
+}
+#dice[data-show="3"] {
+  transform: rotateX(-12deg) rotateY(168deg);
+}
+#dice[data-show="4"] {
+  transform: rotateX(-12deg) rotateY(78deg);
+}
+#dice[data-show="5"] {
+  transform: rotateY(-12deg) rotateX(-102deg);
+}
+#dice[data-show="6"] {
+  transform: rotateY(-12deg) rotateX(-102deg);
+}

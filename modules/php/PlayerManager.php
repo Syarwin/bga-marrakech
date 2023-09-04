@@ -34,15 +34,13 @@ class PlayerManager extends  \APP_DbObject
 	}
 
 
-  // VERY UGLY BUT WORKS....
+  // A BIT UGLY BUT WORKS....
   public static function getNewType($carpetType){
     $players = Marrakech::get()->loadPlayersBasicInfos();
 
     if(count($players) == 2){
       $order = ["ff0000" => 1, "0000ff" => 2];
       $player = array_values($players)[0];
-      if(!isset($order[$player['player_color']])) // TODO remove in future, only for backward compatibility
-        return $carpetType;
 
       if($order[$player['player_color']] != $player['player_no']){
         return $carpetType > 2? ($carpetType - 2) : ($carpetType + 2);
@@ -51,34 +49,10 @@ class PlayerManager extends  \APP_DbObject
       }
     } else {
       $order = ["ff0000" => 2, "0000ff" => 4, "ffa500" => 1, "f07f16" => 3];
-
-      // TODO remove in future, only for backward compatibility
-      foreach($players as $player){
-        if(!isset($order[$player['player_color']]))
-          return $carpetType;
-      }
-
       $reorder = [];
       foreach($players as $player){
         $reorder[$player['player_no']] = $order[$player["player_color"]];
       }
-
-      if(count($players) == 3){
-        $missingIndex = null;
-        $seen = [0, false, false, false, false];
-        for($i = 1; $i <= 4; $i++){
-          if(!isset($reorder[$i]))
-            $missingIndex = $i;
-          else
-            $seen[$reorder[$i]] = true;
-        }
-        for($i = 1; $i <= 4; $i++){
-          if(!$seen[$i]){
-            $reorder[$missingIndex] = $i;
-          }
-        }
-      }
-
 
       return $reorder[$carpetType];
     }
@@ -88,13 +62,13 @@ class PlayerManager extends  \APP_DbObject
     foreach(array_keys($players) as $i => $pId) {
       $carpets = [0,0,0,0];
       $next = 0;
-      $type = $i + 1;
+      $type = self::getNewType($i + 1);
       if(count($players) != 2){
-        $carpets[$i] = count($players) == 4? 12 : 15;
+        $carpets[$type - 1] = count($players) == 4? 12 : 15;
       } else {
-        $type = 2*$i + 1;
-        $carpets[2*$i]     = 12;
-        $carpets[2*$i + 1] = 12;
+        $type = self::getNewType(2*$i + 1);
+        $carpets[$type - 1]     = 12;
+        $carpets[$type] = 12;
         $next = $type + random_int(0, 1); // Carpet indexing start at 1
       }
 
@@ -105,29 +79,8 @@ class PlayerManager extends  \APP_DbObject
 
 
   public static function getUiData(){
-    $players = self::getObjectListFromDb("SELECT player_id id, player_eliminated eliminated, player_score score,
+    return self::getObjectListFromDb("SELECT player_id id, player_eliminated eliminated, player_score score,
       money, carpet_type, carpet_1, carpet_2, carpet_3, carpet_4, next_carpet FROM player");
-
-    // New order
-    $reorder = [];
-    for($i = 1; $i <= 4; $i++){
-      $reorder[$i] = self::getNewType($i);
-    }
-
-    // Update info
-    foreach($players as &$player){
-      $player['carpet_type'] = $reorder[$player['carpet_type']];
-
-      $carpets = [];
-      for($i = 1; $i <= 4; $i++){
-        $carpets[$i] = $player['carpet_'.$i];
-      }
-      for($i = 1; $i <= 4; $i++){
-        $player['carpet_'.$i] = $carpets[$reorder[$i]];
-      }
-    }
-
-    return $players;
   }
 
 	public static function updateUi(){
