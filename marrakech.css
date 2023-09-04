@@ -36,7 +36,7 @@
 #board {
   position: relative;
   width: 720px;
-  height: 720px;
+  height: 718px;
   background-image: url("img/marrakech_board.jpg");
   background-size: 100%;
   padding: 33px 31px 31px 31px;
